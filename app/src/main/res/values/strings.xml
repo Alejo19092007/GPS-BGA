@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GPSBga Conductor</string>
+
+    <!-- Auth -->
+    <string name="lbl_email">Correo electrónico</string>
+    <string name="lbl_password">Contraseña</string>
+    <string name="lbl_confirmar_password">Confirmar contraseña</string>
+    <string name="lbl_nombre">Nombre completo</string>
+    <string name="lbl_cedula">Cédula de ciudadanía</string>
+    <string name="lbl_telefono">Número telefónico</string>
+    <string name="btn_iniciar_sesion">Iniciar Sesión</string>
+    <string name="btn_crear_cuenta">Crear Cuenta</string>
+    <string name="btn_recuperar">Recuperar Cuenta</string>
+    <string name="btn_guardar">Guardar Cambios</string>
+    <string name="txt_olvidaste">¿Olvidaste tu contraseña?</string>
+    <string name="txt_ya_cuenta">¿Ya tienes cuenta? Inicia Sesión</string>
+    <string name="txt_o_continua">O continúa con</string>
+
+    <!-- Dashboard -->
+    <string name="lbl_estado_bus">Estado del Bus</string>
+    <string name="lbl_en_servicio">EN SERVICIO</string>
+    <string name="lbl_fuera_servicio">FUERA DE SERVICIO</string>
+    <string name="lbl_pasajeros">Pasajeros</string>
+    <string name="lbl_tiempo">Tiempo</string>
+    <string name="lbl_velocidad">Velocidad</string>
+    <string name="lbl_distancia">Distancia</string>
+    <string name="lbl_proxima_parada">Próxima Parada</string>
+    <string name="btn_entrar_servicio">Entrar En Servicio</string>
+    <string name="btn_finalizar_ruta">Finalizar Ruta</string>
+
+    <!-- Mapa -->
+    <string name="lbl_mapa_vivo">Mapa En Vivo</string>
+    <string name="btn_centrar">Centrar</string>
+    <string name="btn_paradas">Paradas</string>
+    <string name="btn_finalizar">Finalizar</string>
+
+    <!-- Perfil -->
+    <string name="lbl_perfil">Perfil / Ajustes</string>
+    <string name="lbl_editar_perfil">Editar Perfil</string>
+    <string name="lbl_mis_rutas">Mis Rutas</string>
+    <string name="lbl_historial">Historial de Viajes</string>
+    <string name="lbl_notificaciones">Notificaciones</string>
+    <string name="lbl_modo_nocturno">Modo Nocturno</string>
+    <string name="lbl_ayuda">Ayuda / Soporte</string>
+    <string name="btn_cerrar_sesion">Cerrar Sesión</string>
+
+    <!-- Errores -->
+    <string name="err_campos_vacios">Completa todos los campos</string>
+    <string name="err_email_invalido">Correo electrónico inválido</string>
+    <string name="err_password_corta">Mínimo 6 caracteres</string>
+    <string name="err_passwords_no_coinciden">Las contraseñas no coinciden</string>
+    <string name="err_cedula_invalida">Cédula inválida (mínimo 7 dígitos)</string>
+    <string name="err_telefono_invalido">Número inválido (10 dígitos)</string>
+    <string name="err_sin_permiso_gps">Se necesita permiso de ubicación</string>
+</resources>
