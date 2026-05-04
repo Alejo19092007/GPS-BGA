@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "793953086871",
+    "project_id": "gpsbga-5ac31",
+    "storage_bucket": "gpsbga-5ac31.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:793953086871:android:8399be821ea21f550528d2",
+        "android_client_info": {
+          "package_name": "me.edwarjimenez.gpsbgaconductor"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAHZp_Lw3_GY8FdpChAopU3hqH7O_2Ltl0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
