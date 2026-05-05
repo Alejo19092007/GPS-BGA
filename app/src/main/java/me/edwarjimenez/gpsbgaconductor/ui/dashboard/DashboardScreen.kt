@@ -287,6 +287,7 @@ fun DashboardScreen(
                         else
                             GpsTrackingService.ACTION_INICIAR
                         putExtra(GpsTrackingService.EXTRA_BUS_ID, busId)
+                        putExtra(GpsTrackingService.EXTRA_RUTA_CODIGO, rutaSeleccionada.codigo)
                     }
                     if (!enServicio) {
                         context.startForegroundService(intent)

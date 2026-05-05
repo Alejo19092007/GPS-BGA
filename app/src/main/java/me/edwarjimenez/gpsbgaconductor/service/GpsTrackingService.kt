@@ -5,10 +5,10 @@ import android.content.Intent
 import android.os.*
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.google.android.gms.location.*
 import me.edwarjimenez.gpsbgaconductor.MainActivity
 import me.edwarjimenez.gpsbgaconductor.data.firebase.FirebaseRepository
 import kotlinx.coroutines.*
+import kotlinx.coroutines.tasks.await
 
 class GpsTrackingService : Service() {
 
@@ -18,79 +18,163 @@ class GpsTrackingService : Service() {
         const val ACTION_INICIAR = "INICIAR_GPS"
         const val ACTION_DETENER = "DETENER_GPS"
         const val EXTRA_BUS_ID = "bus_id"
-        const val INTERVALO_GPS_MS = 3000L
+        const val EXTRA_RUTA_CODIGO = "ruta_codigo"
         const val TAG = "GpsTrackingService"
+
+        // Coordenadas de las rutas para simulación
+        val coordenadasRutas = mapOf(
+            "7" to listOf(
+                Pair(7.1390, -73.1180),
+                Pair(7.1320, -73.1190),
+                Pair(7.1250, -73.1200),
+                Pair(7.1180, -73.1210),
+                Pair(7.1100, -73.1190),
+                Pair(7.1050, -73.1150),
+                Pair(7.0980, -73.1180),
+                Pair(7.0920, -73.1160),
+                Pair(7.0850, -73.1140),
+                Pair(7.0780, -73.1120),
+                Pair(7.0650, -73.1090)
+            ),
+            "36" to listOf(
+                Pair(7.0550, -73.0980),
+                Pair(7.0620, -73.1020),
+                Pair(7.0720, -73.1080),
+                Pair(7.0820, -73.1120),
+                Pair(7.0920, -73.1160),
+                Pair(7.1020, -73.1180),
+                Pair(7.1120, -73.1200),
+                Pair(7.1200, -73.1210),
+                Pair(7.1150, -73.1190),
+                Pair(7.1050, -73.1170),
+                Pair(7.0950, -73.1150),
+                Pair(7.0750, -73.1100)
+            ),
+            "27" to listOf(
+                Pair(7.0900, -73.0850),
+                Pair(7.0980, -73.0950),
+                Pair(7.1050, -73.1050),
+                Pair(7.1100, -73.1150),
+                Pair(7.1120, -73.1180),
+                Pair(7.1150, -73.1200),
+                Pair(7.1200, -73.1220),
+                Pair(7.1250, -73.1230),
+                Pair(7.1220, -73.1210),
+                Pair(7.1180, -73.1200)
+            )
+        )
     }
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val repository = FirebaseRepository()
-    private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private lateinit var locationCallback: LocationCallback
-    private var busId: String = ""
-    private var latitudActual = 0.0
-    private var longitudActual = 0.0
-    private var velocidadActual = 0.0
+    private var busId = ""
+    private var rutaCodigo = "36"
+    private var simulacionJob: Job? = null
 
     override fun onCreate() {
         super.onCreate()
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         crearCanalNotificacion()
-        configurarLocationCallback()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         busId = intent?.getStringExtra(EXTRA_BUS_ID) ?: ""
+        rutaCodigo = intent?.getStringExtra(EXTRA_RUTA_CODIGO) ?: "36"
         when (intent?.action) {
-            ACTION_INICIAR -> iniciarRastreo()
+            ACTION_INICIAR -> iniciarSimulacion()
             ACTION_DETENER -> detenerServicio()
         }
         return START_STICKY
     }
 
-    private fun iniciarRastreo() {
-        startForeground(NOTIFICATION_ID, crearNotificacion("GPS activo — transmitiendo ubicación"))
-        try {
-            val request = LocationRequest.Builder(
-                Priority.PRIORITY_HIGH_ACCURACY, INTERVALO_GPS_MS
-            ).setMinUpdateIntervalMillis(2000L).build()
+    private fun iniciarSimulacion() {
+        startForeground(NOTIFICATION_ID, crearNotificacion("GPS activo — simulando recorrido"))
 
-            fusedLocationClient.requestLocationUpdates(
-                request, locationCallback, Looper.getMainLooper()
-            )
-            Log.d(TAG, "GPS iniciado para bus: $busId")
-        } catch (e: SecurityException) {
-            Log.e(TAG, "Sin permisos de ubicación: ${e.message}")
-        }
-    }
+        val coordenadas = coordenadasRutas[rutaCodigo] ?: coordenadasRutas["36"]!!
+        var indice = 0
+        var distanciaTotal = 0.0
+        var tiempoSegundos = 0L
 
-    private fun configurarLocationCallback() {
-        locationCallback = object : LocationCallback() {
-            override fun onLocationResult(result: LocationResult) {
-                result.lastLocation?.let { location ->
-                    latitudActual = location.latitude
-                    longitudActual = location.longitude
-                    velocidadActual = (location.speed * 3.6)
+        simulacionJob = scope.launch {
+            while (isActive) {
+                val (lat, lng) = coordenadas[indice]
 
-                    scope.launch {
-                        repository.publicarUbicacion(
-                            busId,
-                            latitudActual,
-                            longitudActual,
-                            velocidadActual
-                        )
-                    }
-                    Log.d(TAG, "Ubicación: $latitudActual, $longitudActual | ${velocidadActual} km/h")
+                // Calcular velocidad simulada entre 20 y 45 km/h
+                val velocidad = (20..45).random().toDouble()
+
+                // Calcular distancia entre puntos
+                if (indice > 0) {
+                    val (latAnt, lngAnt) = coordenadas[indice - 1]
+                    distanciaTotal += calcularDistancia(latAnt, lngAnt, lat, lng)
                 }
+
+                tiempoSegundos += 5
+
+                // Publicar en Firebase
+                repository.publicarUbicacion(busId, lat, lng, velocidad)
+
+                // También publicar estadísticas
+                actualizarEstadisticas(
+                    busId = busId,
+                    rutaId = rutaCodigo,
+                    velocidad = velocidad,
+                    distancia = distanciaTotal,
+                    tiempo = tiempoSegundos,
+                    paradaActual = indice
+                )
+
+                Log.d(TAG, "Simulando parada $indice: $lat, $lng | ${velocidad}km/h")
+
+                // Avanzar a la siguiente parada
+                indice = (indice + 1) % coordenadas.size
+
+                // Esperar 5 segundos entre paradas
+                delay(5000L)
             }
         }
     }
 
+    private suspend fun actualizarEstadisticas(
+        busId: String,
+        rutaId: String,
+        velocidad: Double,
+        distancia: Double,
+        tiempo: Long,
+        paradaActual: Int
+    ) {
+        try {
+            val db = com.google.firebase.database.FirebaseDatabase.getInstance()
+            val datos = mapOf(
+                "velocidad" to velocidad,
+                "distanciaRecorrida" to String.format("%.1f", distancia),
+                "tiempoEnRuta" to tiempo,
+                "paradaActual" to paradaActual,
+                "rutaId" to rutaId,
+                "estado" to "EN_SERVICIO",
+                "timestamp" to System.currentTimeMillis()
+            )
+            db.getReference("buses").child(busId).updateChildren(datos).await()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error actualizando estadísticas: ${e.message}")
+        }
+    }
+
+    private fun calcularDistancia(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
+        val r = 6371.0
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLng = Math.toRadians(lng2 - lng1)
+        val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                Math.sin(dLng / 2) * Math.sin(dLng / 2)
+        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+        return r * c
+    }
+
     private fun detenerServicio() {
-        fusedLocationClient.removeLocationUpdates(locationCallback)
+        simulacionJob?.cancel()
         scope.cancel()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
-        Log.d(TAG, "Servicio GPS detenido")
+        Log.d(TAG, "Simulación detenida")
     }
 
     private fun crearCanalNotificacion() {
@@ -100,7 +184,7 @@ class GpsTrackingService : Service() {
                 "GPS GPSBGA",
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Rastreo GPS activo en segundo plano"
+                description = "Simulación de recorrido activa"
             }
             val manager = getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(canal)
@@ -127,6 +211,7 @@ class GpsTrackingService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        simulacionJob?.cancel()
         scope.cancel()
     }
 }
