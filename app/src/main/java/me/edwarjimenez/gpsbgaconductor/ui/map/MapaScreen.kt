@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,13 +25,123 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 
+// Datos de rutas con coordenadas reales de Bucaramanga
+data class RutaMapa(
+    val codigo: String,
+    val nombre: String,
+    val color: Long,
+    val paradas: List<Pair<LatLng, String>>,
+    val polilinea: List<LatLng>
+)
+
+val rutasMapa = listOf(
+    // RUTA 7 - LIMONCITO
+    RutaMapa(
+        codigo = "7",
+        nombre = "Limoncito",
+        color = 0xFFFF3B57,
+        paradas = listOf(
+            Pair(LatLng(7.1390, -73.1180), "Terminal Los Cauchos - Estadio"),
+            Pair(LatLng(7.1320, -73.1190), "Servientrega"),
+            Pair(LatLng(7.1250, -73.1200), "Carrera 8"),
+            Pair(LatLng(7.1180, -73.1210), "Paragüitas"),
+            Pair(LatLng(7.1100, -73.1190), "Bucarica"),
+            Pair(LatLng(7.1050, -73.1150), "Transversal Oriental"),
+            Pair(LatLng(7.0980, -73.1180), "CC Cacique"),
+            Pair(LatLng(7.0920, -73.1160), "Megamall"),
+            Pair(LatLng(7.0850, -73.1140), "Plaza Guarín"),
+            Pair(LatLng(7.0780, -73.1120), "Autopista Floridablanca"),
+            Pair(LatLng(7.0650, -73.1090), "Retorno Plata Acero")
+        ),
+        polilinea = listOf(
+            LatLng(7.1390, -73.1180),
+            LatLng(7.1320, -73.1190),
+            LatLng(7.1250, -73.1200),
+            LatLng(7.1180, -73.1210),
+            LatLng(7.1100, -73.1190),
+            LatLng(7.1050, -73.1150),
+            LatLng(7.0980, -73.1180),
+            LatLng(7.0920, -73.1160),
+            LatLng(7.0850, -73.1140),
+            LatLng(7.0780, -73.1120),
+            LatLng(7.0650, -73.1090)
+        )
+    ),
+    // RUTA 36 - IGSABELAR
+    RutaMapa(
+        codigo = "36",
+        nombre = "Igsabelar 33",
+        color = 0xFF0078FF,
+        paradas = listOf(
+            Pair(LatLng(7.0550, -73.0980), "González Chaparro"),
+            Pair(LatLng(7.0620, -73.1020), "Barrio La Paz"),
+            Pair(LatLng(7.0720, -73.1080), "Papi Quiero Piña"),
+            Pair(LatLng(7.0820, -73.1120), "Miradores San Lorenzo"),
+            Pair(LatLng(7.0920, -73.1160), "CC Cacique"),
+            Pair(LatLng(7.1020, -73.1180), "Viaducto La Flora"),
+            Pair(LatLng(7.1120, -73.1200), "Carrera 33"),
+            Pair(LatLng(7.1200, -73.1210), "Megamall"),
+            Pair(LatLng(7.1150, -73.1190), "Plaza Guarín"),
+            Pair(LatLng(7.1050, -73.1170), "Plaza Satélite"),
+            Pair(LatLng(7.0950, -73.1150), "Puente Provenza"),
+            Pair(LatLng(7.0750, -73.1100), "Autopista Cañaveral")
+        ),
+        polilinea = listOf(
+            LatLng(7.0550, -73.0980),
+            LatLng(7.0620, -73.1020),
+            LatLng(7.0720, -73.1080),
+            LatLng(7.0820, -73.1120),
+            LatLng(7.0920, -73.1160),
+            LatLng(7.1020, -73.1180),
+            LatLng(7.1120, -73.1200),
+            LatLng(7.1200, -73.1210),
+            LatLng(7.1150, -73.1190),
+            LatLng(7.1050, -73.1170),
+            LatLng(7.0950, -73.1150),
+            LatLng(7.0750, -73.1100)
+        )
+    ),
+    // RUTA 27 - CARACOLÍ
+    RutaMapa(
+        codigo = "27",
+        nombre = "Caracolí - Centro",
+        color = 0xFF00C66B,
+        paradas = listOf(
+            Pair(LatLng(7.0900, -73.0850), "Terminal Caracolí"),
+            Pair(LatLng(7.0980, -73.0950), "Bucarica"),
+            Pair(LatLng(7.1050, -73.1050), "Bellavista"),
+            Pair(LatLng(7.1100, -73.1150), "Carretera Antigua"),
+            Pair(LatLng(7.1120, -73.1180), "Viaducto La Flora"),
+            Pair(LatLng(7.1150, -73.1200), "Carrera 33"),
+            Pair(LatLng(7.1200, -73.1220), "Calle 34"),
+            Pair(LatLng(7.1250, -73.1230), "Centro - Carrera 10"),
+            Pair(LatLng(7.1220, -73.1210), "Carrera 13"),
+            Pair(LatLng(7.1180, -73.1200), "Cacique Monterrey")
+        ),
+        polilinea = listOf(
+            LatLng(7.0900, -73.0850),
+            LatLng(7.0980, -73.0950),
+            LatLng(7.1050, -73.1050),
+            LatLng(7.1100, -73.1150),
+            LatLng(7.1120, -73.1180),
+            LatLng(7.1150, -73.1200),
+            LatLng(7.1200, -73.1220),
+            LatLng(7.1250, -73.1230),
+            LatLng(7.1220, -73.1210),
+            LatLng(7.1180, -73.1200)
+        )
+    )
+)
+
 @Composable
-fun MapaScreen(onBackClick: () -> Unit) {
+fun MapaScreen(
+    onBackClick: () -> Unit,
+    rutaCodigo: String = "36"
+) {
     val context = LocalContext.current
 
     val bgDark = Color(0xFF0A0F1E)
     val bgCard = Color(0xFF0D1830)
-    val bluePrimary = Color(0xFF0078FF)
     val cyanPrimary = Color(0xFF00C6FF)
     val blueMuted = Color(0xFF4A7FC0)
     val blueBorder = Color(0xFF1E2D5A)
@@ -41,7 +150,8 @@ fun MapaScreen(onBackClick: () -> Unit) {
     val redPrimary = Color(0xFFFF3B57)
     val redBg = Color(0xFF3A0005)
 
-    // Bucaramanga centro
+    val rutaActual = rutasMapa.find { it.codigo == rutaCodigo } ?: rutasMapa[0]
+
     val bucaramanga = LatLng(7.1193, -73.1227)
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(bucaramanga, 13f)
@@ -60,14 +170,11 @@ fun MapaScreen(onBackClick: () -> Unit) {
     ) { granted -> tienePermiso = granted }
 
     LaunchedEffect(Unit) {
-        if (!tienePermiso) {
-            launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-        }
+        if (!tienePermiso) launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
-        // Mapa real de Bucaramanga
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
@@ -80,12 +187,21 @@ fun MapaScreen(onBackClick: () -> Unit) {
                 myLocationButtonEnabled = false
             )
         ) {
-            // Marcador del bus en Bucaramanga
-            Marker(
-                state = MarkerState(position = bucaramanga),
-                title = "Bus GPSBGA",
-                snippet = "Ruta Isabelar"
+            // Dibujar la línea de la ruta
+            Polyline(
+                points = rutaActual.polilinea,
+                color = Color(rutaActual.color),
+                width = 8f
             )
+
+            // Marcadores de paradas
+            rutaActual.paradas.forEachIndexed { index, (ubicacion, nombre) ->
+                Marker(
+                    state = MarkerState(position = ubicacion),
+                    title = nombre,
+                    snippet = "Parada ${index + 1} · Ruta ${rutaActual.codigo}"
+                )
+            }
         }
 
         // Header flotante
@@ -99,7 +215,7 @@ fun MapaScreen(onBackClick: () -> Unit) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(12.dp))
-                    .background(bgDark.copy(alpha = 0.9f))
+                    .background(bgDark.copy(alpha = 0.92f))
                     .padding(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -110,18 +226,19 @@ fun MapaScreen(onBackClick: () -> Unit) {
                         tint = cyanPrimary
                     )
                 }
-                Text(
-                    text = "Mapa En Vivo",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = textPrimary,
-                    modifier = Modifier.weight(1f)
-                )
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                    tint = blueMuted
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Mapa En Vivo",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = textPrimary
+                    )
+                    Text(
+                        text = "Ruta ${rutaActual.codigo} · ${rutaActual.nombre}",
+                        fontSize = 11.sp,
+                        color = blueMuted
+                    )
+                }
             }
         }
 
@@ -133,14 +250,11 @@ fun MapaScreen(onBackClick: () -> Unit) {
                 .align(Alignment.BottomCenter),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Ubicación actual
             Button(
                 onClick = {},
                 modifier = Modifier.weight(1f).height(46.dp),
                 shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = bgCard.copy(alpha = 0.95f)
-                ),
+                colors = ButtonDefaults.buttonColors(containerColor = bgCard.copy(alpha = 0.95f)),
                 border = androidx.compose.foundation.BorderStroke(1.dp, blueBorder)
             ) {
                 Icon(
@@ -153,27 +267,21 @@ fun MapaScreen(onBackClick: () -> Unit) {
                 Text(text = "Centrar", fontSize = 13.sp, color = textSecondary)
             }
 
-            // Paradas
             Button(
                 onClick = {},
                 modifier = Modifier.weight(1f).height(46.dp),
                 shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = bgCard.copy(alpha = 0.95f)
-                ),
+                colors = ButtonDefaults.buttonColors(containerColor = bgCard.copy(alpha = 0.95f)),
                 border = androidx.compose.foundation.BorderStroke(1.dp, blueBorder)
             ) {
                 Text(text = "Paradas", fontSize = 13.sp, color = textSecondary)
             }
 
-            // Finalizar
             Button(
                 onClick = { onBackClick() },
                 modifier = Modifier.weight(1f).height(46.dp),
                 shape = RoundedCornerShape(10.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = redBg.copy(alpha = 0.95f)
-                ),
+                colors = ButtonDefaults.buttonColors(containerColor = redBg.copy(alpha = 0.95f)),
                 border = androidx.compose.foundation.BorderStroke(1.dp, redPrimary)
             ) {
                 Text(text = "Finalizar", fontSize = 13.sp, color = redPrimary)

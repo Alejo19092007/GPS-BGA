@@ -24,13 +24,14 @@ data class RutaBga(
     val nombre: String,
     val terminal: String,
     val empresa: String,
-    val longitud: String
+    val longitud: String,
+    val paradas: List<String>
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
-    onNavigateToMapa: () -> Unit,
+    onNavigateToMapa: (String) -> Unit,
     onNavigateToParadas: () -> Unit,
     onNavigateToPerfil: () -> Unit,
     onLogout: () -> Unit
@@ -42,12 +43,70 @@ fun DashboardScreen(
     var dropdownExpanded by remember { mutableStateOf(false) }
 
     val rutas = listOf(
-        RutaBga("7", "Limoncito", "Los Cauchos - Estadio", "COTRANDER", "23 km"),
-        RutaBga("36", "Igsabelar 33", "González Chaparro", "COTRANDER", "24 km"),
-        RutaBga("27", "Caracolí - Carrera 33 - Centro", "Caracolí", "LUSITANIA S.A.", "27 km")
+        RutaBga(
+            codigo = "7",
+            nombre = "Limoncito",
+            terminal = "Los Cauchos - Estadio",
+            empresa = "COTRANDER",
+            longitud = "23 km",
+            paradas = listOf(
+                "Terminal Los Cauchos",
+                "Servientrega",
+                "Carrera 8",
+                "Paragüitas",
+                "Bucarica",
+                "Transversal Oriental",
+                "CC Cacique",
+                "Megamall",
+                "Plaza Guarín",
+                "Autopista Floridablanca",
+                "Retorno Plata Acero"
+            )
+        ),
+        RutaBga(
+            codigo = "36",
+            nombre = "Igsabelar 33",
+            terminal = "González Chaparro",
+            empresa = "COTRANDER",
+            longitud = "24 km",
+            paradas = listOf(
+                "González Chaparro",
+                "Barrio La Paz",
+                "Papi Quiero Piña",
+                "Miradores San Lorenzo",
+                "CC Cacique",
+                "Viaducto La Flora",
+                "Carrera 33",
+                "Megamall",
+                "Plaza Guarín",
+                "Plaza Satélite",
+                "Puente Provenza",
+                "Autopista Cañaveral"
+            )
+        ),
+        RutaBga(
+            codigo = "27",
+            nombre = "Caracolí - Centro",
+            terminal = "Caracolí",
+            empresa = "LUSITANIA S.A.",
+            longitud = "27 km",
+            paradas = listOf(
+                "Terminal Caracolí",
+                "Bucarica",
+                "Bellavista",
+                "Carretera Antigua",
+                "Viaducto La Flora",
+                "Carrera 33",
+                "Calle 34",
+                "Centro - Carrera 10",
+                "Carrera 13",
+                "Cacique Monterrey"
+            )
+        )
     )
 
     var rutaSeleccionada by remember { mutableStateOf(rutas[0]) }
+    val proximaParada = rutaSeleccionada.paradas.firstOrNull() ?: "Sin paradas"
 
     val bgDark = Color(0xFF0A0F1E)
     val bgCard = Color(0xFF0D1830)
@@ -81,11 +140,7 @@ fun DashboardScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text(
-                        text = "Buenos días 👋",
-                        fontSize = 13.sp,
-                        color = blueMuted
-                    )
+                    Text(text = "Buenos días 👋", fontSize = 13.sp, color = blueMuted)
                     Text(
                         text = usuario?.email?.substringBefore("@") ?: "Conductor",
                         fontSize = 16.sp,
@@ -99,11 +154,7 @@ fun DashboardScreen(
                     )
                 }
                 IconButton(onClick = { onNavigateToPerfil() }) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = null,
-                        tint = blueMuted
-                    )
+                    Icon(Icons.Default.Settings, contentDescription = null, tint = blueMuted)
                 }
             }
 
@@ -133,22 +184,18 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Dropdown de rutas
+            // Dropdown rutas
             ExposedDropdownMenuBox(
                 expanded = dropdownExpanded,
                 onExpandedChange = { dropdownExpanded = !dropdownExpanded }
             ) {
                 Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor(),
+                    modifier = Modifier.fillMaxWidth().menuAnchor(),
                     colors = CardDefaults.cardColors(containerColor = bgCard),
                     shape = RoundedCornerShape(14.dp)
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(14.dp),
+                        modifier = Modifier.fillMaxWidth().padding(14.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -165,11 +212,7 @@ fun DashboardScreen(
                                 color = blueMuted
                             )
                         }
-                        Icon(
-                            imageVector = Icons.Default.KeyboardArrowDown,
-                            contentDescription = null,
-                            tint = bluePrimary
-                        )
+                        Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = bluePrimary)
                     }
                 }
 
@@ -218,8 +261,8 @@ fun DashboardScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                EstadisticaCard("Pasajeros", "0", bgCard, blueMuted, cyanPrimary, Modifier.weight(1f))
-                EstadisticaCard("Tiempo", "0 min", bgCard, blueMuted, cyanPrimary, Modifier.weight(1f))
+                EstadisticaCard("Pasajeros", if (enServicio) "0" else "--", bgCard, blueMuted, cyanPrimary, Modifier.weight(1f))
+                EstadisticaCard("Tiempo", if (enServicio) "0 min" else "--", bgCard, blueMuted, cyanPrimary, Modifier.weight(1f))
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -228,8 +271,8 @@ fun DashboardScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                EstadisticaCard("Velocidad", "0 km/h", bgCard, blueMuted, cyanPrimary, Modifier.weight(1f))
-                EstadisticaCard("Distancia", "0 km", bgCard, blueMuted, cyanPrimary, Modifier.weight(1f))
+                EstadisticaCard("Velocidad", if (enServicio) "0 km/h" else "--", bgCard, blueMuted, cyanPrimary, Modifier.weight(1f))
+                EstadisticaCard("Distancia", if (enServicio) "0 km" else "--", bgCard, blueMuted, cyanPrimary, Modifier.weight(1f))
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -237,9 +280,7 @@ fun DashboardScreen(
             // Botón entrar/finalizar
             Button(
                 onClick = { enServicio = !enServicio },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (enServicio) redBg else greenBg
@@ -259,16 +300,14 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Próxima parada
+            // Próxima parada — cambia con la ruta
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = bgCard),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
+                    modifier = Modifier.fillMaxWidth().padding(12.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
@@ -281,13 +320,18 @@ fun DashboardScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(text = "Próxima Parada", fontSize = 10.sp, color = blueMuted)
                         Text(
-                            text = "Centro Comercial Cañaveral",
+                            text = proximaParada,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = textPrimary
                         )
                     }
-                    Text(text = "7 min", fontSize = 12.sp, color = greenPrimary, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = if (enServicio) "En curso" else "Esperando",
+                        fontSize = 12.sp,
+                        color = if (enServicio) greenPrimary else blueMuted,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
 
@@ -299,7 +343,7 @@ fun DashboardScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Button(
-                    onClick = { onNavigateToMapa() },
+                    onClick = { onNavigateToMapa(rutaSeleccionada.codigo) },
                     modifier = Modifier.weight(1f).height(46.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = bgCard),

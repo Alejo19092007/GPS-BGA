@@ -62,7 +62,9 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("dashboard") {
                         DashboardScreen(
-                            onNavigateToMapa = { navController.navigate("mapa") },
+                            onNavigateToMapa = { codigo ->
+                                navController.navigate("mapa/$codigo")
+                            },
                             onNavigateToParadas = { navController.navigate("paradas") },
                             onNavigateToPerfil = { navController.navigate("perfil") },
                             onLogout = {
@@ -72,8 +74,11 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
-                    composable("mapa") {
-                        MapaScreen(onBackClick = { navController.popBackStack() })
+                    composable("mapa/{rutaCodigo}") { backStackEntry ->
+                        MapaScreen(
+                            onBackClick = { navController.popBackStack() },
+                            rutaCodigo = backStackEntry.arguments?.getString("rutaCodigo") ?: "36"
+                        )
                     }
                     composable("paradas") {
                         ParadasScreen(onBackClick = { navController.popBackStack() })
