@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,6 +19,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
 
+data class RutaBga(
+    val codigo: String,
+    val nombre: String,
+    val terminal: String,
+    val empresa: String,
+    val longitud: String
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     onNavigateToMapa: () -> Unit,
@@ -29,6 +39,15 @@ fun DashboardScreen(
     val usuario = auth.currentUser
 
     var enServicio by remember { mutableStateOf(false) }
+    var dropdownExpanded by remember { mutableStateOf(false) }
+
+    val rutas = listOf(
+        RutaBga("7", "Limoncito", "Los Cauchos - Estadio", "COTRANDER", "23 km"),
+        RutaBga("36", "Igsabelar 33", "González Chaparro", "COTRANDER", "24 km"),
+        RutaBga("27", "Caracolí - Carrera 33 - Centro", "Caracolí", "LUSITANIA S.A.", "27 km")
+    )
+
+    var rutaSeleccionada by remember { mutableStateOf(rutas[0]) }
 
     val bgDark = Color(0xFF0A0F1E)
     val bgCard = Color(0xFF0D1830)
@@ -74,7 +93,7 @@ fun DashboardScreen(
                         color = textPrimary
                     )
                     Text(
-                        text = "Conductor · Ruta Isabelar",
+                        text = "Conductor · ${rutaSeleccionada.nombre}",
                         fontSize = 11.sp,
                         color = blueMuted
                     )
@@ -96,11 +115,7 @@ fun DashboardScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Estado del Bus",
-                    fontSize = 13.sp,
-                    color = textSecondary
-                )
+                Text(text = "Estado del Bus", fontSize = 13.sp, color = textSecondary)
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
@@ -118,33 +133,81 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Ruta card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = bgCard),
-                shape = RoundedCornerShape(14.dp)
+            // Dropdown de rutas
+            ExposedDropdownMenuBox(
+                expanded = dropdownExpanded,
+                onExpandedChange = { dropdownExpanded = !dropdownExpanded }
             ) {
-                Row(
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(14.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .menuAnchor(),
+                    colors = CardDefaults.cardColors(containerColor = bgCard),
+                    shape = RoundedCornerShape(14.dp)
                 ) {
-                    Column {
-                        Text(
-                            text = "Ruta IGSABELAR",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = textPrimary
-                        )
-                        Text(
-                            text = "La 200 · Floridablanca",
-                            fontSize = 11.sp,
-                            color = blueMuted
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Ruta ${rutaSeleccionada.codigo} · ${rutaSeleccionada.nombre}",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = textPrimary
+                            )
+                            Text(
+                                text = "${rutaSeleccionada.terminal} · ${rutaSeleccionada.longitud}",
+                                fontSize = 11.sp,
+                                color = blueMuted
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowDown,
+                            contentDescription = null,
+                            tint = bluePrimary
                         )
                     }
-                    Text(text = "›", fontSize = 22.sp, color = bluePrimary)
+                }
+
+                ExposedDropdownMenu(
+                    expanded = dropdownExpanded,
+                    onDismissRequest = { dropdownExpanded = false },
+                    modifier = Modifier.background(bgCard)
+                ) {
+                    rutas.forEach { ruta ->
+                        DropdownMenuItem(
+                            text = {
+                                Column {
+                                    Text(
+                                        text = "Ruta ${ruta.codigo} · ${ruta.nombre}",
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = textPrimary
+                                    )
+                                    Text(
+                                        text = "${ruta.empresa} · ${ruta.longitud}",
+                                        fontSize = 11.sp,
+                                        color = blueMuted
+                                    )
+                                }
+                            },
+                            onClick = {
+                                rutaSeleccionada = ruta
+                                dropdownExpanded = false
+                            },
+                            modifier = Modifier.background(
+                                if (ruta == rutaSeleccionada) bluePrimary.copy(alpha = 0.1f)
+                                else Color.Transparent
+                            )
+                        )
+                        if (ruta != rutas.last()) {
+                            HorizontalDivider(color = blueBorder, thickness = 0.5.dp)
+                        }
+                    }
                 }
             }
 
@@ -155,22 +218,8 @@ fun DashboardScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                EstadisticaCard(
-                    label = "Pasajeros",
-                    valor = "0",
-                    bgCard = bgCard,
-                    blueMuted = blueMuted,
-                    cyanPrimary = cyanPrimary,
-                    modifier = Modifier.weight(1f)
-                )
-                EstadisticaCard(
-                    label = "Tiempo",
-                    valor = "0 min",
-                    bgCard = bgCard,
-                    blueMuted = blueMuted,
-                    cyanPrimary = cyanPrimary,
-                    modifier = Modifier.weight(1f)
-                )
+                EstadisticaCard("Pasajeros", "0", bgCard, blueMuted, cyanPrimary, Modifier.weight(1f))
+                EstadisticaCard("Tiempo", "0 min", bgCard, blueMuted, cyanPrimary, Modifier.weight(1f))
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -179,22 +228,8 @@ fun DashboardScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                EstadisticaCard(
-                    label = "Velocidad",
-                    valor = "0 km/h",
-                    bgCard = bgCard,
-                    blueMuted = blueMuted,
-                    cyanPrimary = cyanPrimary,
-                    modifier = Modifier.weight(1f)
-                )
-                EstadisticaCard(
-                    label = "Distancia",
-                    valor = "0 km",
-                    bgCard = bgCard,
-                    blueMuted = blueMuted,
-                    cyanPrimary = cyanPrimary,
-                    modifier = Modifier.weight(1f)
-                )
+                EstadisticaCard("Velocidad", "0 km/h", bgCard, blueMuted, cyanPrimary, Modifier.weight(1f))
+                EstadisticaCard("Distancia", "0 km", bgCard, blueMuted, cyanPrimary, Modifier.weight(1f))
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -244,11 +279,7 @@ fun DashboardScreen(
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Próxima Parada",
-                            fontSize = 10.sp,
-                            color = blueMuted
-                        )
+                        Text(text = "Próxima Parada", fontSize = 10.sp, color = blueMuted)
                         Text(
                             text = "Centro Comercial Cañaveral",
                             fontSize = 13.sp,
@@ -256,18 +287,13 @@ fun DashboardScreen(
                             color = textPrimary
                         )
                     }
-                    Text(
-                        text = "7 min",
-                        fontSize = 12.sp,
-                        color = greenPrimary,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text(text = "7 min", fontSize = 12.sp, color = greenPrimary, fontWeight = FontWeight.Bold)
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botones de navegación
+            // Botones navegación
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -315,11 +341,7 @@ fun EstadisticaCard(
             modifier = Modifier.padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = label,
-                fontSize = 10.sp,
-                color = blueMuted
-            )
+            Text(text = label, fontSize = 10.sp, color = blueMuted)
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = valor,
