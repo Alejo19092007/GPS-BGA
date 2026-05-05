@@ -20,6 +20,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import me.edwarjimenez.gpsbgaconductor.service.GpsTrackingService
 
 data class RutaBga(
@@ -42,9 +46,32 @@ fun DashboardScreen(
     val auth = remember { FirebaseAuth.getInstance() }
     val usuario = auth.currentUser
     val context = LocalContext.current
+    val db = remember { FirebaseDatabase.getInstance() }
+    val busId = auth.currentUser?.uid ?: "bus_001"
 
     var enServicio by remember { mutableStateOf(false) }
     var dropdownExpanded by remember { mutableStateOf(false) }
+
+    var velocidad by remember { mutableStateOf("0 km/h") }
+    var distancia by remember { mutableStateOf("0 km") }
+    var tiempo by remember { mutableStateOf("0 min") }
+
+    LaunchedEffect(enServicio) {
+        if (enServicio) {
+            db.getReference("buses").child(busId)
+                .addValueEventListener(object : ValueEventListener {
+                    override fun onDataChange(snapshot: DataSnapshot) {
+                        val vel = snapshot.child("velocidad").getValue(Double::class.java)?.toInt() ?: 0
+                        val dist = snapshot.child("distanciaRecorrida").getValue(String::class.java) ?: "0"
+                        val t = snapshot.child("tiempoEnRuta").getValue(Long::class.java) ?: 0L
+                        velocidad = "$vel km/h"
+                        distancia = "$dist km"
+                        tiempo = "${t / 60} min"
+                    }
+                    override fun onCancelled(error: DatabaseError) {}
+                })
+        }
+    }
 
     val rutas = listOf(
         RutaBga(
@@ -240,6 +267,18 @@ fun DashboardScreen(
                                 }
                             },
                             onClick = {
+                                if (enServicio) {
+                                    val intentDetener = Intent(context, GpsTrackingService::class.java).apply {
+                                        action = GpsTrackingService.ACTION_DETENER
+                                    }
+                                    context.startService(intentDetener)
+                                    val intentIniciar = Intent(context, GpsTrackingService::class.java).apply {
+                                        action = GpsTrackingService.ACTION_INICIAR
+                                        putExtra(GpsTrackingService.EXTRA_BUS_ID, busId)
+                                        putExtra(GpsTrackingService.EXTRA_RUTA_CODIGO, ruta.codigo)
+                                    }
+                                    context.startForegroundService(intentIniciar)
+                                }
                                 rutaSeleccionada = ruta
                                 dropdownExpanded = false
                             },
@@ -262,7 +301,7 @@ fun DashboardScreen(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 EstadisticaCard("Pasajeros", if (enServicio) "0" else "--", bgCard, blueMuted, cyanPrimary, Modifier.weight(1f))
-                EstadisticaCard("Tiempo", if (enServicio) "0 min" else "--", bgCard, blueMuted, cyanPrimary, Modifier.weight(1f))
+                EstadisticaCard("Tiempo", if (enServicio) tiempo else "--", bgCard, blueMuted, cyanPrimary, Modifier.weight(1f))
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -271,16 +310,14 @@ fun DashboardScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                EstadisticaCard("Velocidad", if (enServicio) "0 km/h" else "--", bgCard, blueMuted, cyanPrimary, Modifier.weight(1f))
-                EstadisticaCard("Distancia", if (enServicio) "0 km" else "--", bgCard, blueMuted, cyanPrimary, Modifier.weight(1f))
+                EstadisticaCard("Velocidad", if (enServicio) velocidad else "--", bgCard, blueMuted, cyanPrimary, Modifier.weight(1f))
+                EstadisticaCard("Distancia", if (enServicio) distancia else "--", bgCard, blueMuted, cyanPrimary, Modifier.weight(1f))
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botón Entrar/Finalizar con GPS
             Button(
                 onClick = {
-                    val busId = auth.currentUser?.uid ?: "bus_001"
                     val intent = Intent(context, GpsTrackingService::class.java).apply {
                         action = if (enServicio)
                             GpsTrackingService.ACTION_DETENER

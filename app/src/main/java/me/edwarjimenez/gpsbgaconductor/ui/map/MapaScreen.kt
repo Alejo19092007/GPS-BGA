@@ -22,8 +22,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.google.android.gms.maps.CameraUpdateFactory
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import com.google.maps.android.compose.*
 import kotlinx.coroutines.launch
 
@@ -123,6 +128,7 @@ fun MapaScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val db = remember { FirebaseDatabase.getInstance() }
 
     val bgDark = Color(0xFF0A0F1E)
     val bgCard = Color(0xFF0D1830)
@@ -136,10 +142,15 @@ fun MapaScreen(
 
     val rutaActual = rutasMapa.find { it.codigo == rutaCodigo } ?: rutasMapa[0]
     val bucaramanga = LatLng(7.1193, -73.1227)
+    val primeraPosicion = rutaActual.polilinea.firstOrNull() ?: bucaramanga
 
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(bucaramanga, 13f)
     }
+
+    var busLat by remember { mutableStateOf(primeraPosicion.latitude) }
+    var busLng by remember { mutableStateOf(primeraPosicion.longitude) }
+    val busMarkerState = rememberMarkerState(position = primeraPosicion)
 
     var tienePermiso by remember {
         mutableStateOf(
@@ -155,6 +166,31 @@ fun MapaScreen(
 
     LaunchedEffect(Unit) {
         if (!tienePermiso) launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+    }
+
+    LaunchedEffect(rutaCodigo) {
+        val primera = rutaActual.polilinea.firstOrNull() ?: bucaramanga
+        busLat = primera.latitude
+        busLng = primera.longitude
+        busMarkerState.position = primera
+
+        db.getReference("buses")
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    snapshot.children.firstOrNull { bus ->
+                        bus.child("rutaId").getValue(String::class.java) == rutaCodigo
+                    }?.let { bus ->
+                        val lat = bus.child("latitud").getValue(Double::class.java)
+                        val lng = bus.child("longitud").getValue(Double::class.java)
+                        if (lat != null && lng != null && lat != 0.0 && lng != 0.0) {
+                            busLat = lat
+                            busLng = lng
+                            busMarkerState.position = LatLng(lat, lng)
+                        }
+                    }
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            })
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -176,16 +212,24 @@ fun MapaScreen(
                 color = Color(rutaActual.color),
                 width = 8f
             )
+
             rutaActual.paradas.forEachIndexed { index, (ubicacion, nombre) ->
                 Marker(
                     state = MarkerState(position = ubicacion),
                     title = nombre,
-                    snippet = "Parada ${index + 1} · Ruta ${rutaActual.codigo}"
+                    snippet = "Parada ${index + 1} · Ruta ${rutaActual.codigo}",
+                    icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
                 )
             }
+
+            Marker(
+                state = busMarkerState,
+                title = "🚌 Bus GPSBGA",
+                snippet = "En movimiento · Ruta ${rutaActual.codigo}",
+                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
+            )
         }
 
-        // Header flotante
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -223,7 +267,6 @@ fun MapaScreen(
             }
         }
 
-        // Botones abajo
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -235,7 +278,7 @@ fun MapaScreen(
                 onClick = {
                     scope.launch {
                         cameraPositionState.animate(
-                            CameraUpdateFactory.newLatLngZoom(bucaramanga, 13f)
+                            CameraUpdateFactory.newLatLngZoom(LatLng(busLat, busLng), 15f)
                         )
                     }
                 },
