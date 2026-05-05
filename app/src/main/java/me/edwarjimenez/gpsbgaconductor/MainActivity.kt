@@ -79,9 +79,11 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     composable("mapa/{rutaCodigo}") { backStackEntry ->
+                        val codigo = backStackEntry.arguments?.getString("rutaCodigo") ?: "36"
                         MapaScreen(
                             onBackClick = { navController.popBackStack() },
-                            rutaCodigo = backStackEntry.arguments?.getString("rutaCodigo") ?: "36"
+                            onNavigateToParadas = { navController.navigate("paradas/$it") },
+                            rutaCodigo = codigo
                         )
                     }
                     composable("paradas/{rutaCodigo}") { backStackEntry ->

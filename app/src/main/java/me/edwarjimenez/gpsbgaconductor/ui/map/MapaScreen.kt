@@ -118,6 +118,7 @@ val rutasMapa = listOf(
 @Composable
 fun MapaScreen(
     onBackClick: () -> Unit,
+    onNavigateToParadas: (String) -> Unit = {},
     rutaCodigo: String = "36"
 ) {
     val context = LocalContext.current
@@ -254,7 +255,7 @@ fun MapaScreen(
             }
 
             Button(
-                onClick = {},
+                onClick = { onNavigateToParadas(rutaCodigo) },
                 modifier = Modifier.weight(1f).height(46.dp),
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = bgCard.copy(alpha = 0.95f)),
