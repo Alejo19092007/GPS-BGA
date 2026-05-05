@@ -32,7 +32,7 @@ data class RutaBga(
 @Composable
 fun DashboardScreen(
     onNavigateToMapa: (String) -> Unit,
-    onNavigateToParadas: () -> Unit,
+    onNavigateToParadas: (String) -> Unit,
     onNavigateToPerfil: () -> Unit,
     onLogout: () -> Unit
 ) {
@@ -133,7 +133,6 @@ fun DashboardScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -160,7 +159,6 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Estado del bus
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -184,7 +182,6 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Dropdown rutas
             ExposedDropdownMenuBox(
                 expanded = dropdownExpanded,
                 onExpandedChange = { dropdownExpanded = !dropdownExpanded }
@@ -256,7 +253,6 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Estadísticas
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -277,7 +273,6 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botón entrar/finalizar
             Button(
                 onClick = { enServicio = !enServicio },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
@@ -300,7 +295,6 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Próxima parada — cambia con la ruta
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = bgCard),
@@ -337,7 +331,6 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botones navegación
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -352,7 +345,7 @@ fun DashboardScreen(
                     Text(text = "Mapa", fontSize = 13.sp, color = textSecondary)
                 }
                 Button(
-                    onClick = { onNavigateToParadas() },
+                    onClick = { onNavigateToParadas(rutaSeleccionada.codigo) },
                     modifier = Modifier.weight(1f).height(46.dp),
                     shape = RoundedCornerShape(10.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = bgCard),

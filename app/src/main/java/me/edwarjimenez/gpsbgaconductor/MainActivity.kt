@@ -67,7 +67,9 @@ class MainActivity : ComponentActivity() {
                             onNavigateToMapa = { codigo ->
                                 navController.navigate("mapa/$codigo")
                             },
-                            onNavigateToParadas = { navController.navigate("paradas") },
+                            onNavigateToParadas = { codigo ->
+                                navController.navigate("paradas/$codigo")
+                            },
                             onNavigateToPerfil = { navController.navigate("perfil") },
                             onLogout = {
                                 navController.navigate("login") {
@@ -82,8 +84,11 @@ class MainActivity : ComponentActivity() {
                             rutaCodigo = backStackEntry.arguments?.getString("rutaCodigo") ?: "36"
                         )
                     }
-                    composable("paradas") {
-                        ParadasScreen(onBackClick = { navController.popBackStack() })
+                    composable("paradas/{rutaCodigo}") { backStackEntry ->
+                        ParadasScreen(
+                            onBackClick = { navController.popBackStack() },
+                            rutaCodigo = backStackEntry.arguments?.getString("rutaCodigo") ?: "36"
+                        )
                     }
                     composable("perfil") {
                         PerfilScreen(
