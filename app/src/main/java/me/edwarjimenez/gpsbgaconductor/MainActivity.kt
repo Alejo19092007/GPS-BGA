@@ -5,12 +5,17 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import me.edwarjimenez.gpsbgaconductor.ui.auth.LoginScreen
+import me.edwarjimenez.gpsbgaconductor.ui.auth.RegistroScreen
+import me.edwarjimenez.gpsbgaconductor.ui.auth.RecuperarScreen
+import me.edwarjimenez.gpsbgaconductor.ui.dashboard.DashboardScreen
+import me.edwarjimenez.gpsbgaconductor.ui.map.MapaScreen
+import me.edwarjimenez.gpsbgaconductor.ui.stops.ParadasScreen
+import me.edwarjimenez.gpsbgaconductor.ui.profile.PerfilScreen
 import me.edwarjimenez.gpsbgaconductor.ui.theme.GpsBGAConductorTheme
 
 class MainActivity : ComponentActivity() {
@@ -18,9 +23,73 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-
+            GpsBGAConductorTheme {
+                val navController = rememberNavController()
+                NavHost(
+                    navController = navController,
+                    startDestination = "login",
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    composable("login") {
+                        LoginScreen(
+                            onLoginSuccess = {
+                                navController.navigate("dashboard") {
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            },
+                            onNavigateToRegistro = {
+                                navController.navigate("registro")
+                            },
+                            onNavigateToRecuperar = {
+                                navController.navigate("recuperar")
+                            }
+                        )
+                    }
+                    composable("registro") {
+                        RegistroScreen(
+                            onRegistroSuccess = {
+                                navController.navigate("dashboard") {
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            },
+                            onBackClick = { navController.popBackStack() }
+                        )
+                    }
+                    composable("recuperar") {
+                        RecuperarScreen(
+                            onBackClick = { navController.popBackStack() }
+                        )
+                    }
+                    composable("dashboard") {
+                        DashboardScreen(
+                            onNavigateToMapa = { navController.navigate("mapa") },
+                            onNavigateToParadas = { navController.navigate("paradas") },
+                            onNavigateToPerfil = { navController.navigate("perfil") },
+                            onLogout = {
+                                navController.navigate("login") {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            }
+                        )
+                    }
+                    composable("mapa") {
+                        MapaScreen(onBackClick = { navController.popBackStack() })
+                    }
+                    composable("paradas") {
+                        ParadasScreen(onBackClick = { navController.popBackStack() })
+                    }
+                    composable("perfil") {
+                        PerfilScreen(
+                            onBackClick = { navController.popBackStack() },
+                            onLogout = {
+                                navController.navigate("login") {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            }
+                        )
+                    }
+                }
             }
         }
     }
-
-
+}

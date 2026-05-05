@@ -1,0 +1,258 @@
+package me.edwarjimenez.gpsbgaconductor.ui.auth
+
+import android.widget.Toast
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.google.firebase.auth.FirebaseAuth
+
+@Composable
+fun LoginScreen(
+    onLoginSuccess: () -> Unit,
+    onNavigateToRegistro: () -> Unit,
+    onNavigateToRecuperar: () -> Unit
+) {
+    val auth = remember { FirebaseAuth.getInstance() }
+    val context = LocalContext.current
+
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+    var passwordVisible by remember { mutableStateOf(false) }
+
+    val bgDark = Color(0xFF0A0F1E)
+    val bgCard = Color(0xFF0D1830)
+    val bluePrimary = Color(0xFF0078FF)
+    val cyanPrimary = Color(0xFF00C6FF)
+    val blueMuted = Color(0xFF4A7FC0)
+    val blueBorder = Color(0xFF1E2D5A)
+    val textPrimary = Color(0xFFE0EEFF)
+    val textSecondary = Color(0xFFB0C4E8)
+
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = bgDark
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(28.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.height(60.dp))
+
+            // Logo
+            Text(
+                text = "GPSBGA",
+                fontSize = 36.sp,
+                fontWeight = FontWeight.Bold,
+                color = cyanPrimary,
+                letterSpacing = 4.sp
+            )
+            Text(
+                text = "CONDUCTOR",
+                fontSize = 12.sp,
+                color = blueMuted,
+                letterSpacing = 3.sp
+            )
+
+            Spacer(modifier = Modifier.height(48.dp))
+
+            // Email
+            Text(
+                text = "Correo electrónico",
+                fontSize = 12.sp,
+                color = blueMuted,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            TextField(
+                value = email,
+                onValueChange = { email = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(10.dp)),
+                placeholder = { Text("correo@ejemplo.com", color = blueMuted) },
+                leadingIcon = { Icon(Icons.Default.Email, null, tint = blueMuted) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                singleLine = true,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = bgCard,
+                    unfocusedContainerColor = bgCard,
+                    focusedIndicatorColor = bluePrimary,
+                    unfocusedIndicatorColor = blueBorder,
+                    focusedTextColor = textPrimary,
+                    unfocusedTextColor = textPrimary
+                )
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Contraseña
+            Text(
+                text = "Contraseña",
+                fontSize = 12.sp,
+                color = blueMuted,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            TextField(
+                value = password,
+                onValueChange = { password = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(10.dp)),
+                placeholder = { Text("••••••••", color = blueMuted) },
+                leadingIcon = { Icon(Icons.Default.Lock, null, tint = blueMuted) },
+                visualTransformation = if (passwordVisible)
+                    VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                singleLine = true,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = bgCard,
+                    unfocusedContainerColor = bgCard,
+                    focusedIndicatorColor = bluePrimary,
+                    unfocusedIndicatorColor = blueBorder,
+                    focusedTextColor = textPrimary,
+                    unfocusedTextColor = textPrimary
+                )
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Olvidaste contraseña
+            Text(
+                text = "¿Olvidaste tu contraseña?",
+                fontSize = 12.sp,
+                color = blueMuted,
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .clickable { onNavigateToRecuperar() }
+                    .padding(4.dp)
+            )
+
+            Spacer(modifier = Modifier.height(28.dp))
+
+            // Botón Iniciar Sesión
+            Button(
+                onClick = {
+                    if (email.isNotEmpty() && password.isNotEmpty()) {
+                        isLoading = true
+                        auth.signInWithEmailAndPassword(email, password)
+                            .addOnCompleteListener { task ->
+                                isLoading = false
+                                if (task.isSuccessful) {
+                                    onLoginSuccess()
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        "Error: ${task.exception?.message}",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
+                    } else {
+                        Toast.makeText(context, "Completa todos los campos", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                enabled = !isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = bluePrimary)
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                } else {
+                    Text(
+                        text = "Iniciar Sesión",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Botón Crear Cuenta
+            OutlinedButton(
+                onClick = { onNavigateToRegistro() },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = blueMuted),
+                border = androidx.compose.foundation.BorderStroke(1.dp, blueBorder)
+            ) {
+                Text(
+                    text = "Crear Cuenta",
+                    fontSize = 15.sp,
+                    color = blueMuted
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Divider
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                HorizontalDivider(modifier = Modifier.weight(1f), color = blueBorder)
+                Text(
+                    text = "  O continúa con  ",
+                    fontSize = 12.sp,
+                    color = blueMuted
+                )
+                HorizontalDivider(modifier = Modifier.weight(1f), color = blueBorder)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Botón Google
+            OutlinedButton(
+                onClick = {
+                    Toast.makeText(context, "Google Sign-In próximamente", Toast.LENGTH_SHORT).show()
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = textSecondary),
+                border = androidx.compose.foundation.BorderStroke(1.dp, blueBorder)
+            ) {
+                Text(
+                    text = "Continuar con Google",
+                    fontSize = 14.sp,
+                    color = textSecondary
+                )
+            }
+
+            Spacer(modifier = Modifier.height(40.dp))
+        }
+    }
+}
