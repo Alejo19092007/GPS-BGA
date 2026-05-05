@@ -13,6 +13,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.GpsBGAConductor">
 
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyA_75ZgvfeSzX3f1AsDZSw9xjjZfV7NpU4" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
