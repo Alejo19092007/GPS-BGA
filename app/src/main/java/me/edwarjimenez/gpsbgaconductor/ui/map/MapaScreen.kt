@@ -21,11 +21,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
+import kotlinx.coroutines.launch
 
-// Datos de rutas con coordenadas reales de Bucaramanga
 data class RutaMapa(
     val codigo: String,
     val nombre: String,
@@ -35,7 +36,6 @@ data class RutaMapa(
 )
 
 val rutasMapa = listOf(
-    // RUTA 7 - LIMONCITO
     RutaMapa(
         codigo = "7",
         nombre = "Limoncito",
@@ -54,20 +54,14 @@ val rutasMapa = listOf(
             Pair(LatLng(7.0650, -73.1090), "Retorno Plata Acero")
         ),
         polilinea = listOf(
-            LatLng(7.1390, -73.1180),
-            LatLng(7.1320, -73.1190),
-            LatLng(7.1250, -73.1200),
-            LatLng(7.1180, -73.1210),
-            LatLng(7.1100, -73.1190),
-            LatLng(7.1050, -73.1150),
-            LatLng(7.0980, -73.1180),
-            LatLng(7.0920, -73.1160),
-            LatLng(7.0850, -73.1140),
-            LatLng(7.0780, -73.1120),
+            LatLng(7.1390, -73.1180), LatLng(7.1320, -73.1190),
+            LatLng(7.1250, -73.1200), LatLng(7.1180, -73.1210),
+            LatLng(7.1100, -73.1190), LatLng(7.1050, -73.1150),
+            LatLng(7.0980, -73.1180), LatLng(7.0920, -73.1160),
+            LatLng(7.0850, -73.1140), LatLng(7.0780, -73.1120),
             LatLng(7.0650, -73.1090)
         )
     ),
-    // RUTA 36 - IGSABELAR
     RutaMapa(
         codigo = "36",
         nombre = "Igsabelar 33",
@@ -87,21 +81,14 @@ val rutasMapa = listOf(
             Pair(LatLng(7.0750, -73.1100), "Autopista Cañaveral")
         ),
         polilinea = listOf(
-            LatLng(7.0550, -73.0980),
-            LatLng(7.0620, -73.1020),
-            LatLng(7.0720, -73.1080),
-            LatLng(7.0820, -73.1120),
-            LatLng(7.0920, -73.1160),
-            LatLng(7.1020, -73.1180),
-            LatLng(7.1120, -73.1200),
-            LatLng(7.1200, -73.1210),
-            LatLng(7.1150, -73.1190),
-            LatLng(7.1050, -73.1170),
-            LatLng(7.0950, -73.1150),
-            LatLng(7.0750, -73.1100)
+            LatLng(7.0550, -73.0980), LatLng(7.0620, -73.1020),
+            LatLng(7.0720, -73.1080), LatLng(7.0820, -73.1120),
+            LatLng(7.0920, -73.1160), LatLng(7.1020, -73.1180),
+            LatLng(7.1120, -73.1200), LatLng(7.1200, -73.1210),
+            LatLng(7.1150, -73.1190), LatLng(7.1050, -73.1170),
+            LatLng(7.0950, -73.1150), LatLng(7.0750, -73.1100)
         )
     ),
-    // RUTA 27 - CARACOLÍ
     RutaMapa(
         codigo = "27",
         nombre = "Caracolí - Centro",
@@ -119,16 +106,11 @@ val rutasMapa = listOf(
             Pair(LatLng(7.1180, -73.1200), "Cacique Monterrey")
         ),
         polilinea = listOf(
-            LatLng(7.0900, -73.0850),
-            LatLng(7.0980, -73.0950),
-            LatLng(7.1050, -73.1050),
-            LatLng(7.1100, -73.1150),
-            LatLng(7.1120, -73.1180),
-            LatLng(7.1150, -73.1200),
-            LatLng(7.1200, -73.1220),
-            LatLng(7.1250, -73.1230),
-            LatLng(7.1220, -73.1210),
-            LatLng(7.1180, -73.1200)
+            LatLng(7.0900, -73.0850), LatLng(7.0980, -73.0950),
+            LatLng(7.1050, -73.1050), LatLng(7.1100, -73.1150),
+            LatLng(7.1120, -73.1180), LatLng(7.1150, -73.1200),
+            LatLng(7.1200, -73.1220), LatLng(7.1250, -73.1230),
+            LatLng(7.1220, -73.1210), LatLng(7.1180, -73.1200)
         )
     )
 )
@@ -139,6 +121,7 @@ fun MapaScreen(
     rutaCodigo: String = "36"
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     val bgDark = Color(0xFF0A0F1E)
     val bgCard = Color(0xFF0D1830)
@@ -151,8 +134,8 @@ fun MapaScreen(
     val redBg = Color(0xFF3A0005)
 
     val rutaActual = rutasMapa.find { it.codigo == rutaCodigo } ?: rutasMapa[0]
-
     val bucaramanga = LatLng(7.1193, -73.1227)
+
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(bucaramanga, 13f)
     }
@@ -187,14 +170,11 @@ fun MapaScreen(
                 myLocationButtonEnabled = false
             )
         ) {
-            // Dibujar la línea de la ruta
             Polyline(
                 points = rutaActual.polilinea,
                 color = Color(rutaActual.color),
                 width = 8f
             )
-
-            // Marcadores de paradas
             rutaActual.paradas.forEachIndexed { index, (ubicacion, nombre) ->
                 Marker(
                     state = MarkerState(position = ubicacion),
@@ -242,7 +222,7 @@ fun MapaScreen(
             }
         }
 
-        // Controles flotantes abajo
+        // Botones abajo
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -251,7 +231,13 @@ fun MapaScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Button(
-                onClick = {},
+                onClick = {
+                    scope.launch {
+                        cameraPositionState.animate(
+                            CameraUpdateFactory.newLatLngZoom(bucaramanga, 13f)
+                        )
+                    }
+                },
                 modifier = Modifier.weight(1f).height(46.dp),
                 shape = RoundedCornerShape(10.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = bgCard.copy(alpha = 0.95f)),

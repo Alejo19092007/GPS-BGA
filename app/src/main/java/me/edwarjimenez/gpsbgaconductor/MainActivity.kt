@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.google.firebase.auth.FirebaseAuth
 import me.edwarjimenez.gpsbgaconductor.ui.auth.LoginScreen
 import me.edwarjimenez.gpsbgaconductor.ui.auth.RegistroScreen
 import me.edwarjimenez.gpsbgaconductor.ui.auth.RecuperarScreen
@@ -21,6 +22,7 @@ import me.edwarjimenez.gpsbgaconductor.ui.theme.GpsBGAConductorTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FirebaseAuth.getInstance().signOut()
         enableEdgeToEdge()
         setContent {
             GpsBGAConductorTheme {
