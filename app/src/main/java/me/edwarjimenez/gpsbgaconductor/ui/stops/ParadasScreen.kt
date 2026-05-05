@@ -16,6 +16,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import me.edwarjimenez.gpsbgaconductor.ui.map.rutasMapa
 
 @Composable
@@ -36,6 +40,22 @@ fun ParadasScreen(
     val redBg = Color(0xFF3A0005)
 
     val rutaActual = rutasMapa.find { it.codigo == rutaCodigo } ?: rutasMapa[0]
+    val db = remember { FirebaseDatabase.getInstance() }
+    var paradaActual by remember { mutableStateOf(0) }
+
+    LaunchedEffect(rutaCodigo) {
+        db.getReference("buses")
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    snapshot.children.firstOrNull { bus ->
+                        bus.child("rutaId").getValue(String::class.java) == rutaCodigo
+                    }?.let { bus ->
+                        paradaActual = bus.child("paradaActual").getValue(Int::class.java) ?: 0
+                    }
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            })
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -89,13 +109,15 @@ fun ParadasScreen(
                 itemsIndexed(rutaActual.paradas) { index, (ubicacion, nombre) ->
                     val esInicio = index == 0
                     val esFinal = index == rutaActual.paradas.size - 1
-                    val esActual = index == 1
+                    val esActual = index == paradaActual
+                    val esPasada = index < paradaActual
 
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
                             containerColor = when {
                                 esActual -> bluePrimary.copy(alpha = 0.15f)
+                                esPasada -> bgCard.copy(alpha = 0.5f)
                                 else -> bgCard
                             }
                         ),
@@ -113,9 +135,11 @@ fun ParadasScreen(
                                     .clip(RoundedCornerShape(50))
                                     .background(
                                         when {
+                                            esInicio && esPasada -> greenBg.copy(alpha = 0.5f)
                                             esInicio -> greenBg
                                             esFinal -> redBg
                                             esActual -> bluePrimary
+                                            esPasada -> bgDark.copy(alpha = 0.5f)
                                             else -> bgDark
                                         }
                                     ),
@@ -125,6 +149,7 @@ fun ParadasScreen(
                                     text = when {
                                         esInicio -> "I"
                                         esFinal -> "F"
+                                        esPasada -> "✓"
                                         else -> "${index + 1}"
                                     },
                                     fontSize = 12.sp,
@@ -133,6 +158,7 @@ fun ParadasScreen(
                                         esInicio -> greenPrimary
                                         esFinal -> redPrimary
                                         esActual -> Color.White
+                                        esPasada -> blueMuted.copy(alpha = 0.5f)
                                         else -> blueMuted
                                     }
                                 )
@@ -145,13 +171,15 @@ fun ParadasScreen(
                                     text = nombre,
                                     fontSize = 14.sp,
                                     fontWeight = if (esActual) FontWeight.Bold else FontWeight.Normal,
-                                    color = textPrimary
+                                    color = if (esPasada) textPrimary.copy(alpha = 0.4f) else textPrimary
                                 )
                                 Text(
                                     text = when {
+                                        esInicio && esPasada -> "Superada"
                                         esInicio -> "Inicio de ruta"
                                         esFinal -> "Final de ruta"
                                         esActual -> "Parada actual"
+                                        esPasada -> "Superada"
                                         else -> "Parada ${index + 1}"
                                     },
                                     fontSize = 11.sp,
@@ -159,15 +187,16 @@ fun ParadasScreen(
                                         esInicio -> greenPrimary
                                         esFinal -> redPrimary
                                         esActual -> cyanPrimary
+                                        esPasada -> blueMuted.copy(alpha = 0.4f)
                                         else -> blueMuted
                                     }
                                 )
                             }
 
                             Text(
-                                text = "${index * 5} min",
+                                text = if (esPasada) "✓" else "${index * 5} min",
                                 fontSize = 12.sp,
-                                color = blueMuted,
+                                color = if (esPasada) greenPrimary.copy(alpha = 0.5f) else blueMuted,
                                 fontWeight = FontWeight.Bold
                             )
                         }
