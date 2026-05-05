@@ -1,5 +1,6 @@
 package me.edwarjimenez.gpsbgaconductor.ui.dashboard
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -14,10 +15,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
+import me.edwarjimenez.gpsbgaconductor.service.GpsTrackingService
 
 data class RutaBga(
     val codigo: String,
@@ -38,6 +41,7 @@ fun DashboardScreen(
 ) {
     val auth = remember { FirebaseAuth.getInstance() }
     val usuario = auth.currentUser
+    val context = LocalContext.current
 
     var enServicio by remember { mutableStateOf(false) }
     var dropdownExpanded by remember { mutableStateOf(false) }
@@ -273,8 +277,24 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Botón Entrar/Finalizar con GPS
             Button(
-                onClick = { enServicio = !enServicio },
+                onClick = {
+                    val busId = auth.currentUser?.uid ?: "bus_001"
+                    val intent = Intent(context, GpsTrackingService::class.java).apply {
+                        action = if (enServicio)
+                            GpsTrackingService.ACTION_DETENER
+                        else
+                            GpsTrackingService.ACTION_INICIAR
+                        putExtra(GpsTrackingService.EXTRA_BUS_ID, busId)
+                    }
+                    if (!enServicio) {
+                        context.startForegroundService(intent)
+                    } else {
+                        context.startService(intent)
+                    }
+                    enServicio = !enServicio
+                },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
