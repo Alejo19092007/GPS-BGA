@@ -21,7 +21,6 @@ class GpsTrackingService : Service() {
         const val EXTRA_RUTA_CODIGO = "ruta_codigo"
         const val TAG = "GpsTrackingService"
 
-        // Coordenadas de las rutas para simulación
         val coordenadasRutas = mapOf(
             "7" to listOf(
                 Pair(7.1390, -73.1180),
@@ -87,7 +86,11 @@ class GpsTrackingService : Service() {
     }
 
     private fun iniciarSimulacion() {
-        startForeground(NOTIFICATION_ID, crearNotificacion("GPS activo — simulando recorrido"))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            startForeground(NOTIFICATION_ID, crearNotificacion("GPS activo — simulando recorrido"), android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } else {
+            startForeground(NOTIFICATION_ID, crearNotificacion("GPS activo — simulando recorrido"))
+        }
 
         val coordenadas = coordenadasRutas[rutaCodigo] ?: coordenadasRutas["36"]!!
         var indice = 0
@@ -97,22 +100,15 @@ class GpsTrackingService : Service() {
         simulacionJob = scope.launch {
             while (isActive) {
                 val (lat, lng) = coordenadas[indice]
-
-                // Calcular velocidad simulada entre 20 y 45 km/h
                 val velocidad = (20..45).random().toDouble()
 
-                // Calcular distancia entre puntos
                 if (indice > 0) {
                     val (latAnt, lngAnt) = coordenadas[indice - 1]
                     distanciaTotal += calcularDistancia(latAnt, lngAnt, lat, lng)
                 }
 
                 tiempoSegundos += 5
-
-                // Publicar en Firebase
                 repository.publicarUbicacion(busId, lat, lng, velocidad)
-
-                // También publicar estadísticas
                 actualizarEstadisticas(
                     busId = busId,
                     rutaId = rutaCodigo,
@@ -123,11 +119,7 @@ class GpsTrackingService : Service() {
                 )
 
                 Log.d(TAG, "Simulando parada $indice: $lat, $lng | ${velocidad}km/h")
-
-                // Avanzar a la siguiente parada
                 indice = (indice + 1) % coordenadas.size
-
-                // Esperar 5 segundos entre paradas
                 delay(5000L)
             }
         }

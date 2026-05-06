@@ -17,6 +17,10 @@ import me.edwarjimenez.gpsbgaconductor.ui.dashboard.DashboardScreen
 import me.edwarjimenez.gpsbgaconductor.ui.map.MapaScreen
 import me.edwarjimenez.gpsbgaconductor.ui.stops.ParadasScreen
 import me.edwarjimenez.gpsbgaconductor.ui.profile.PerfilScreen
+import me.edwarjimenez.gpsbgaconductor.ui.profile.EditarPerfilScreen
+import me.edwarjimenez.gpsbgaconductor.ui.profile.MisRutasScreen
+import me.edwarjimenez.gpsbgaconductor.ui.profile.HistorialScreen
+import me.edwarjimenez.gpsbgaconductor.ui.profile.AyudaScreen
 import me.edwarjimenez.gpsbgaconductor.ui.theme.GpsBGAConductorTheme
 
 class MainActivity : ComponentActivity() {
@@ -39,12 +43,8 @@ class MainActivity : ComponentActivity() {
                                     popUpTo("login") { inclusive = true }
                                 }
                             },
-                            onNavigateToRegistro = {
-                                navController.navigate("registro")
-                            },
-                            onNavigateToRecuperar = {
-                                navController.navigate("recuperar")
-                            }
+                            onNavigateToRegistro = { navController.navigate("registro") },
+                            onNavigateToRecuperar = { navController.navigate("recuperar") }
                         )
                     }
                     composable("registro") {
@@ -58,18 +58,12 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     composable("recuperar") {
-                        RecuperarScreen(
-                            onBackClick = { navController.popBackStack() }
-                        )
+                        RecuperarScreen(onBackClick = { navController.popBackStack() })
                     }
                     composable("dashboard") {
                         DashboardScreen(
-                            onNavigateToMapa = { codigo ->
-                                navController.navigate("mapa/$codigo")
-                            },
-                            onNavigateToParadas = { codigo ->
-                                navController.navigate("paradas/$codigo")
-                            },
+                            onNavigateToMapa = { navController.navigate("mapa/$it") },
+                            onNavigateToParadas = { navController.navigate("paradas/$it") },
                             onNavigateToPerfil = { navController.navigate("perfil") },
                             onLogout = {
                                 navController.navigate("login") {
@@ -99,8 +93,24 @@ class MainActivity : ComponentActivity() {
                                 navController.navigate("login") {
                                     popUpTo(0) { inclusive = true }
                                 }
-                            }
+                            },
+                            onEditarPerfil = { navController.navigate("editar_perfil") },
+                            onMisRutas = { navController.navigate("mis_rutas") },
+                            onHistorial = { navController.navigate("historial") },
+                            onAyuda = { navController.navigate("ayuda") }
                         )
+                    }
+                    composable("editar_perfil") {
+                        EditarPerfilScreen(onBackClick = { navController.popBackStack() })
+                    }
+                    composable("mis_rutas") {
+                        MisRutasScreen(onBackClick = { navController.popBackStack() })
+                    }
+                    composable("historial") {
+                        HistorialScreen(onBackClick = { navController.popBackStack() })
+                    }
+                    composable("ayuda") {
+                        AyudaScreen(onBackClick = { navController.popBackStack() })
                     }
                 }
             }
