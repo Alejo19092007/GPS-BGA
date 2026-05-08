@@ -1,6 +1,7 @@
 package me.edwarjimenez.gpsbgaconductor.ui.auth
 
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -16,7 +17,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -24,6 +27,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
+import me.edwarjimenez.gpsbgaconductor.R
 
 @Composable
 fun LoginScreen(
@@ -61,7 +65,18 @@ fun LoginScreen(
         ) {
             Spacer(modifier = Modifier.height(60.dp))
 
-            // Logo
+            // Logo imagen
+            Image(
+                painter = painterResource(id = R.drawable.bus),
+                contentDescription = "GPSBGA Logo",
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(RoundedCornerShape(24.dp)),
+                contentScale = ContentScale.Fit
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             Text(
                 text = "GPSBGA",
                 fontSize = 36.sp,
@@ -142,7 +157,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Olvidaste contraseña
             Text(
                 text = "¿Olvidaste tu contraseña?",
                 fontSize = 12.sp,
@@ -155,7 +169,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // Botón Iniciar Sesión
             Button(
                 onClick = {
                     if (email.isNotEmpty() && password.isNotEmpty()) {
@@ -178,78 +191,52 @@ fun LoginScreen(
                     }
                 },
                 enabled = !isLoading,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = bluePrimary)
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                 } else {
-                    Text(
-                        text = "Iniciar Sesión",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
+                    Text("Iniciar Sesión", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Botón Crear Cuenta
             OutlinedButton(
                 onClick = { onNavigateToRegistro() },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = blueMuted),
                 border = androidx.compose.foundation.BorderStroke(1.dp, blueBorder)
             ) {
-                Text(
-                    text = "Crear Cuenta",
-                    fontSize = 15.sp,
-                    color = blueMuted
-                )
+                Text("Crear Cuenta", fontSize = 15.sp, color = blueMuted)
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Divider
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 HorizontalDivider(modifier = Modifier.weight(1f), color = blueBorder)
-                Text(
-                    text = "  O continúa con  ",
-                    fontSize = 12.sp,
-                    color = blueMuted
-                )
+                Text("  O continúa con  ", fontSize = 12.sp, color = blueMuted)
                 HorizontalDivider(modifier = Modifier.weight(1f), color = blueBorder)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Botón Google
             OutlinedButton(
                 onClick = {
                     Toast.makeText(context, "Google Sign-In próximamente", Toast.LENGTH_SHORT).show()
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(52.dp),
+                modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = textSecondary),
                 border = androidx.compose.foundation.BorderStroke(1.dp, blueBorder)
             ) {
-                Text(
-                    text = "Continuar con Google",
-                    fontSize = 14.sp,
-                    color = textSecondary
-                )
+                Text("Continuar con Google", fontSize = 14.sp, color = textSecondary)
             }
 
             Spacer(modifier = Modifier.height(40.dp))
