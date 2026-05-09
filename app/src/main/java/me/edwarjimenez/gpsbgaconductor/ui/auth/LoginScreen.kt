@@ -1,6 +1,9 @@
 package me.edwarjimenez.gpsbgaconductor.ui.auth
 
+import android.app.Activity
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -26,7 +29,11 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import me.edwarjimenez.gpsbgaconductor.R
 
 @Composable
@@ -52,6 +59,39 @@ fun LoginScreen(
     val textPrimary = Color(0xFFE0EEFF)
     val textSecondary = Color(0xFFB0C4E8)
 
+    // Google Sign-In
+    val googleSignInClient = remember {
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(context.getString(R.string.default_web_client_id))
+            .requestEmail()
+            .build()
+        GoogleSignIn.getClient(context, gso)
+    }
+
+    val googleLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account = task.getResult(ApiException::class.java)
+                val credential = GoogleAuthProvider.getCredential(account.idToken, null)
+                isLoading = true
+                auth.signInWithCredential(credential)
+                    .addOnCompleteListener { authTask ->
+                        isLoading = false
+                        if (authTask.isSuccessful) {
+                            onLoginSuccess()
+                        } else {
+                            Toast.makeText(context, "Error con Google: ${authTask.exception?.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+            } catch (e: ApiException) {
+                Toast.makeText(context, "Error Google: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = bgDark
@@ -65,7 +105,6 @@ fun LoginScreen(
         ) {
             Spacer(modifier = Modifier.height(60.dp))
 
-            // Logo imagen
             Image(
                 painter = painterResource(id = R.drawable.bus),
                 contentDescription = "GPSBGA Logo",
@@ -93,21 +132,12 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // Email
-            Text(
-                text = "Correo electrónico",
-                fontSize = 12.sp,
-                color = blueMuted,
-                modifier = Modifier.fillMaxWidth()
-            )
+            Text(text = "Correo electrónico", fontSize = 12.sp, color = blueMuted, modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(6.dp))
             TextField(
                 value = email,
                 onValueChange = { email = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .clip(RoundedCornerShape(10.dp)),
+                modifier = Modifier.fillMaxWidth().height(56.dp).clip(RoundedCornerShape(10.dp)),
                 placeholder = { Text("correo@ejemplo.com", color = blueMuted) },
                 leadingIcon = { Icon(Icons.Default.Email, null, tint = blueMuted) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
@@ -124,25 +154,15 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Contraseña
-            Text(
-                text = "Contraseña",
-                fontSize = 12.sp,
-                color = blueMuted,
-                modifier = Modifier.fillMaxWidth()
-            )
+            Text(text = "Contraseña", fontSize = 12.sp, color = blueMuted, modifier = Modifier.fillMaxWidth())
             Spacer(modifier = Modifier.height(6.dp))
             TextField(
                 value = password,
                 onValueChange = { password = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .clip(RoundedCornerShape(10.dp)),
+                modifier = Modifier.fillMaxWidth().height(56.dp).clip(RoundedCornerShape(10.dp)),
                 placeholder = { Text("••••••••", color = blueMuted) },
                 leadingIcon = { Icon(Icons.Default.Lock, null, tint = blueMuted) },
-                visualTransformation = if (passwordVisible)
-                    VisualTransformation.None else PasswordVisualTransformation(),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 singleLine = true,
                 colors = TextFieldDefaults.colors(
@@ -161,10 +181,7 @@ fun LoginScreen(
                 text = "¿Olvidaste tu contraseña?",
                 fontSize = 12.sp,
                 color = blueMuted,
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .clickable { onNavigateToRecuperar() }
-                    .padding(4.dp)
+                modifier = Modifier.align(Alignment.End).clickable { onNavigateToRecuperar() }.padding(4.dp)
             )
 
             Spacer(modifier = Modifier.height(28.dp))
@@ -179,11 +196,7 @@ fun LoginScreen(
                                 if (task.isSuccessful) {
                                     onLoginSuccess()
                                 } else {
-                                    Toast.makeText(
-                                        context,
-                                        "Error: ${task.exception?.message}",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    Toast.makeText(context, "Error: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
                                 }
                             }
                     } else {
@@ -229,7 +242,9 @@ fun LoginScreen(
 
             OutlinedButton(
                 onClick = {
-                    Toast.makeText(context, "Google Sign-In próximamente", Toast.LENGTH_SHORT).show()
+                    googleSignInClient.signOut().addOnCompleteListener {
+                        googleLauncher.launch(googleSignInClient.signInIntent)
+                    }
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(12.dp),
