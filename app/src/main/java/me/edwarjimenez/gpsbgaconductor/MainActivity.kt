@@ -4,10 +4,20 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.google.firebase.auth.FirebaseAuth
 import me.edwarjimenez.gpsbgaconductor.ui.auth.LoginScreen
@@ -31,86 +41,196 @@ class MainActivity : ComponentActivity() {
         setContent {
             GpsBGAConductorTheme {
                 val navController = rememberNavController()
-                NavHost(
-                    navController = navController,
-                    startDestination = "login",
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    composable("login") {
-                        LoginScreen(
-                            onLoginSuccess = {
-                                navController.navigate("dashboard") {
-                                    popUpTo("login") { inclusive = true }
-                                }
-                            },
-                            onNavigateToRegistro = { navController.navigate("registro") },
-                            onNavigateToRecuperar = { navController.navigate("recuperar") }
-                        )
-                    }
-                    composable("registro") {
-                        RegistroScreen(
-                            onRegistroSuccess = {
-                                navController.navigate("dashboard") {
-                                    popUpTo("login") { inclusive = true }
-                                }
-                            },
-                            onBackClick = { navController.popBackStack() }
-                        )
-                    }
-                    composable("recuperar") {
-                        RecuperarScreen(onBackClick = { navController.popBackStack() })
-                    }
-                    composable("dashboard") {
-                        DashboardScreen(
-                            onNavigateToMapa = { navController.navigate("mapa/$it") },
-                            onNavigateToParadas = { navController.navigate("paradas/$it") },
-                            onNavigateToPerfil = { navController.navigate("perfil") },
-                            onLogout = {
-                                navController.navigate("login") {
-                                    popUpTo(0) { inclusive = true }
-                                }
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = navBackStackEntry?.destination?.route
+
+                // Rutas donde NO mostrar la barra de navegación
+                val rutasSinNavBar = listOf("login", "registro", "recuperar")
+                val mostrarNavBar = currentRoute !in rutasSinNavBar &&
+                        !currentRoute.orEmpty().startsWith("mapa") &&
+                        currentRoute != "editar_perfil" &&
+                        currentRoute != "mis_rutas" &&
+                        currentRoute != "historial" &&
+                        currentRoute != "ayuda"
+
+                val bgDark = Color(0xFF0A0F1E)
+                val bgCard = Color(0xFF0D1830)
+                val bluePrimary = Color(0xFF0078FF)
+                val blueMuted = Color(0xFF4A7FC0)
+                val blueBorder = Color(0xFF1E2D5A)
+                val cyanPrimary = Color(0xFF00C6FF)
+
+                Scaffold(
+                    bottomBar = {
+                        if (mostrarNavBar) {
+                            NavigationBar(
+                                containerColor = bgCard,
+                                tonalElevation = 0.dp
+                            ) {
+                                NavigationBarItem(
+                                    selected = currentRoute == "dashboard",
+                                    onClick = {
+                                        navController.navigate("dashboard") {
+                                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    },
+                                    icon = { Icon(Icons.Default.Home, contentDescription = null) },
+                                    label = { Text("Inicio", fontSize = 10.sp) },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = cyanPrimary,
+                                        selectedTextColor = cyanPrimary,
+                                        unselectedIconColor = blueMuted,
+                                        unselectedTextColor = blueMuted,
+                                        indicatorColor = bluePrimary.copy(alpha = 0.2f)
+                                    )
+                                )
+                                NavigationBarItem(
+                                    selected = currentRoute?.startsWith("mapa") == true,
+                                    onClick = {
+                                        navController.navigate("mapa/36") {
+                                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    },
+                                    icon = { Icon(Icons.Default.Map, contentDescription = null) },
+                                    label = { Text("Mapa", fontSize = 10.sp) },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = cyanPrimary,
+                                        selectedTextColor = cyanPrimary,
+                                        unselectedIconColor = blueMuted,
+                                        unselectedTextColor = blueMuted,
+                                        indicatorColor = bluePrimary.copy(alpha = 0.2f)
+                                    )
+                                )
+                                NavigationBarItem(
+                                    selected = currentRoute?.startsWith("paradas") == true,
+                                    onClick = {
+                                        navController.navigate("paradas/36") {
+                                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    },
+                                    icon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
+                                    label = { Text("Paradas", fontSize = 10.sp) },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = cyanPrimary,
+                                        selectedTextColor = cyanPrimary,
+                                        unselectedIconColor = blueMuted,
+                                        unselectedTextColor = blueMuted,
+                                        indicatorColor = bluePrimary.copy(alpha = 0.2f)
+                                    )
+                                )
+                                NavigationBarItem(
+                                    selected = currentRoute == "perfil",
+                                    onClick = {
+                                        navController.navigate("perfil") {
+                                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                                            launchSingleTop = true
+                                            restoreState = true
+                                        }
+                                    },
+                                    icon = { Icon(Icons.Default.Person, contentDescription = null) },
+                                    label = { Text("Perfil", fontSize = 10.sp) },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = cyanPrimary,
+                                        selectedTextColor = cyanPrimary,
+                                        unselectedIconColor = blueMuted,
+                                        unselectedTextColor = blueMuted,
+                                        indicatorColor = bluePrimary.copy(alpha = 0.2f)
+                                    )
+                                )
                             }
-                        )
-                    }
-                    composable("mapa/{rutaCodigo}") { backStackEntry ->
-                        val codigo = backStackEntry.arguments?.getString("rutaCodigo") ?: "36"
-                        MapaScreen(
-                            onBackClick = { navController.popBackStack() },
-                            onNavigateToParadas = { navController.navigate("paradas/$it") },
-                            rutaCodigo = codigo
-                        )
-                    }
-                    composable("paradas/{rutaCodigo}") { backStackEntry ->
-                        ParadasScreen(
-                            onBackClick = { navController.popBackStack() },
-                            rutaCodigo = backStackEntry.arguments?.getString("rutaCodigo") ?: "36"
-                        )
-                    }
-                    composable("perfil") {
-                        PerfilScreen(
-                            onBackClick = { navController.popBackStack() },
-                            onLogout = {
-                                navController.navigate("login") {
-                                    popUpTo(0) { inclusive = true }
+                        }
+                    },
+                    containerColor = bgDark
+                ) { paddingValues ->
+                    NavHost(
+                        navController = navController,
+                        startDestination = "login",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues)
+                    ) {
+                        composable("login") {
+                            LoginScreen(
+                                onLoginSuccess = {
+                                    navController.navigate("dashboard") {
+                                        popUpTo("login") { inclusive = true }
+                                    }
+                                },
+                                onNavigateToRegistro = { navController.navigate("registro") },
+                                onNavigateToRecuperar = { navController.navigate("recuperar") }
+                            )
+                        }
+                        composable("registro") {
+                            RegistroScreen(
+                                onRegistroSuccess = {
+                                    navController.navigate("dashboard") {
+                                        popUpTo("login") { inclusive = true }
+                                    }
+                                },
+                                onBackClick = { navController.popBackStack() }
+                            )
+                        }
+                        composable("recuperar") {
+                            RecuperarScreen(onBackClick = { navController.popBackStack() })
+                        }
+                        composable("dashboard") {
+                            DashboardScreen(
+                                onNavigateToMapa = { navController.navigate("mapa/$it") },
+                                onNavigateToParadas = { navController.navigate("paradas/$it") },
+                                onNavigateToPerfil = { navController.navigate("perfil") },
+                                onLogout = {
+                                    navController.navigate("login") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
                                 }
-                            },
-                            onEditarPerfil = { navController.navigate("editar_perfil") },
-                            onMisRutas = { navController.navigate("mis_rutas") },
-                            onHistorial = { navController.navigate("historial") },
-                            onAyuda = { navController.navigate("ayuda") }
-                        )
-                    }
-                    composable("editar_perfil") {
-                        EditarPerfilScreen(onBackClick = { navController.popBackStack() })
-                    }
-                    composable("mis_rutas") {
-                        MisRutasScreen(onBackClick = { navController.popBackStack() })
-                    }
-                    composable("historial") {
-                        HistorialScreen(onBackClick = { navController.popBackStack() })
-                    }
-                    composable("ayuda") {
-                        AyudaScreen(onBackClick = { navController.popBackStack() })
+                            )
+                        }
+                        composable("mapa/{rutaCodigo}") { backStackEntry ->
+                            val codigo = backStackEntry.arguments?.getString("rutaCodigo") ?: "36"
+                            MapaScreen(
+                                onBackClick = { navController.popBackStack() },
+                                onNavigateToParadas = { navController.navigate("paradas/$it") },
+                                rutaCodigo = codigo
+                            )
+                        }
+                        composable("paradas/{rutaCodigo}") { backStackEntry ->
+                            ParadasScreen(
+                                onBackClick = { navController.popBackStack() },
+                                rutaCodigo = backStackEntry.arguments?.getString("rutaCodigo") ?: "36"
+                            )
+                        }
+                        composable("perfil") {
+                            PerfilScreen(
+                                onBackClick = { navController.popBackStack() },
+                                onLogout = {
+                                    navController.navigate("login") {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                },
+                                onEditarPerfil = { navController.navigate("editar_perfil") },
+                                onMisRutas = { navController.navigate("mis_rutas") },
+                                onHistorial = { navController.navigate("historial") },
+                                onAyuda = { navController.navigate("ayuda") }
+                            )
+                        }
+                        composable("editar_perfil") {
+                            EditarPerfilScreen(onBackClick = { navController.popBackStack() })
+                        }
+                        composable("mis_rutas") {
+                            MisRutasScreen(onBackClick = { navController.popBackStack() })
+                        }
+                        composable("historial") {
+                            HistorialScreen(onBackClick = { navController.popBackStack() })
+                        }
+                        composable("ayuda") {
+                            AyudaScreen(onBackClick = { navController.popBackStack() })
+                        }
                     }
                 }
             }
