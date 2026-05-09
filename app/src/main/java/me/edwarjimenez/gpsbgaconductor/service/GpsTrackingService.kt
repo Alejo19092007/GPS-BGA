@@ -120,7 +120,7 @@ class GpsTrackingService : Service() {
 
                 Log.d(TAG, "Simulando parada $indice: $lat, $lng | ${velocidad}km/h")
                 indice = (indice + 1) % coordenadas.size
-                delay(5000L)
+                delay(20000L)
             }
         }
     }
