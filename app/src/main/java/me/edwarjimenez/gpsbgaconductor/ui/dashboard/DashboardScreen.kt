@@ -5,6 +5,8 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -70,23 +72,33 @@ fun DashboardScreen(
     val context = LocalContext.current
     val db = remember { FirebaseDatabase.getInstance() }
     val busId = auth.currentUser?.uid ?: "bus_001"
+    val prefs = remember { context.getSharedPreferences("gpsbga_prefs", Context.MODE_PRIVATE) }
 
-    var enServicio by remember { mutableStateOf(false) }
+    // Estado persistente con SharedPreferences
+    var enServicio by remember { mutableStateOf(prefs.getBoolean("en_servicio", false)) }
+    var rutaCodigo by remember { mutableStateOf(prefs.getString("ruta_codigo", "7") ?: "7") }
     var dropdownExpanded by remember { mutableStateOf(false) }
-    var pasajeros by remember { mutableStateOf(0) }
+    var pasajeros by remember { mutableStateOf(prefs.getInt("pasajeros", 0)) }
     var velocidad by remember { mutableStateOf("0 km/h") }
     var distancia by remember { mutableStateOf("0 km") }
     var tiempo by remember { mutableStateOf("0 min") }
     var paradaActualIndex by remember { mutableStateOf(0) }
     var ultimaParadaNotificada by remember { mutableStateOf(-1) }
 
+    // Pedir permiso de notificaciones
+    val permisosLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { }
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permisosLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
     val rutas = listOf(
         RutaBga(
-            codigo = "7",
-            nombre = "Limoncito",
-            terminal = "Los Cauchos - Estadio",
-            empresa = "COTRANDER",
-            longitud = "23 km",
+            codigo = "7", nombre = "Limoncito",
+            terminal = "Los Cauchos - Estadio", empresa = "COTRANDER", longitud = "23 km",
             paradas = listOf(
                 "Terminal Los Cauchos", "Servientrega", "Carrera 8",
                 "Paragüitas", "Bucarica", "Transversal Oriental",
@@ -95,11 +107,8 @@ fun DashboardScreen(
             )
         ),
         RutaBga(
-            codigo = "36",
-            nombre = "Igsabelar 33",
-            terminal = "González Chaparro",
-            empresa = "COTRANDER",
-            longitud = "24 km",
+            codigo = "36", nombre = "Igsabelar 33",
+            terminal = "González Chaparro", empresa = "COTRANDER", longitud = "24 km",
             paradas = listOf(
                 "González Chaparro", "Barrio La Paz", "Papi Quiero Piña",
                 "Miradores San Lorenzo", "CC Cacique", "Viaducto La Flora",
@@ -108,11 +117,8 @@ fun DashboardScreen(
             )
         ),
         RutaBga(
-            codigo = "27",
-            nombre = "Caracolí - Centro",
-            terminal = "Caracolí",
-            empresa = "LUSITANIA S.A.",
-            longitud = "27 km",
+            codigo = "27", nombre = "Caracolí - Centro",
+            terminal = "Caracolí", empresa = "LUSITANIA S.A.", longitud = "27 km",
             paradas = listOf(
                 "Terminal Caracolí", "Bucarica", "Bellavista",
                 "Carretera Antigua", "Viaducto La Flora", "Carrera 33",
@@ -121,7 +127,9 @@ fun DashboardScreen(
         )
     )
 
-    var rutaSeleccionada by remember { mutableStateOf(rutas[0]) }
+    var rutaSeleccionada by remember {
+        mutableStateOf(rutas.find { it.codigo == rutaCodigo } ?: rutas[0])
+    }
 
     // Escuchar Firebase en tiempo real
     LaunchedEffect(enServicio) {
@@ -137,8 +145,6 @@ fun DashboardScreen(
                         distancia = "$dist km"
                         tiempo = "${t / 60} min"
                         paradaActualIndex = parada
-
-                        // Notificación cuando cambia de parada
                         if (parada != ultimaParadaNotificada && parada < rutaSeleccionada.paradas.size) {
                             ultimaParadaNotificada = parada
                             enviarNotificacionParada(context, rutaSeleccionada.paradas[parada])
@@ -151,8 +157,6 @@ fun DashboardScreen(
 
     val proximaParada = if (paradaActualIndex < rutaSeleccionada.paradas.size)
         rutaSeleccionada.paradas[paradaActualIndex] else rutaSeleccionada.paradas.last()
-
-    // Tiempo estimado a próxima parada
     val tiempoEstimado = if (enServicio) "${(paradaActualIndex + 1) * 5} min" else "--"
 
     val bgDark = Color(0xFF0A0F1E)
@@ -277,6 +281,8 @@ fun DashboardScreen(
                                     context.startForegroundService(intentIniciar)
                                 }
                                 rutaSeleccionada = ruta
+                                rutaCodigo = ruta.codigo
+                                prefs.edit().putString("ruta_codigo", ruta.codigo).apply()
                                 paradaActualIndex = 0
                                 ultimaParadaNotificada = -1
                                 dropdownExpanded = false
@@ -292,12 +298,10 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Estadísticas — Pasajeros con contador
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Card Pasajeros con + y -
                 Card(
                     modifier = Modifier.weight(1f),
                     colors = CardDefaults.cardColors(containerColor = bgCard),
@@ -316,14 +320,22 @@ fun DashboardScreen(
                         if (enServicio) {
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 TextButton(
-                                    onClick = { if (pasajeros > 0) pasajeros-- },
+                                    onClick = {
+                                        if (pasajeros > 0) {
+                                            pasajeros--
+                                            prefs.edit().putInt("pasajeros", pasajeros).apply()
+                                        }
+                                    },
                                     modifier = Modifier.size(32.dp),
                                     contentPadding = PaddingValues(0.dp)
                                 ) {
                                     Text("-", fontSize = 20.sp, color = redPrimary, fontWeight = FontWeight.Bold)
                                 }
                                 TextButton(
-                                    onClick = { pasajeros++ },
+                                    onClick = {
+                                        pasajeros++
+                                        prefs.edit().putInt("pasajeros", pasajeros).apply()
+                                    },
                                     modifier = Modifier.size(32.dp),
                                     contentPadding = PaddingValues(0.dp)
                                 ) {
@@ -333,7 +345,6 @@ fun DashboardScreen(
                         }
                     }
                 }
-
                 EstadisticaCard("Tiempo", if (enServicio) tiempo else "--", bgCard, blueMuted, cyanPrimary, Modifier.weight(1f))
             }
 
@@ -361,8 +372,17 @@ fun DashboardScreen(
                         pasajeros = 0
                         paradaActualIndex = 0
                         ultimaParadaNotificada = -1
+                        prefs.edit()
+                            .putBoolean("en_servicio", true)
+                            .putInt("pasajeros", 0)
+                            .putString("ruta_codigo", rutaSeleccionada.codigo)
+                            .apply()
                     } else {
                         context.startService(intent)
+                        prefs.edit()
+                            .putBoolean("en_servicio", false)
+                            .putInt("pasajeros", 0)
+                            .apply()
                     }
                     enServicio = !enServicio
                 },
@@ -380,7 +400,6 @@ fun DashboardScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Próxima parada con tiempo estimado
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = bgCard),
@@ -416,8 +435,7 @@ fun DashboardScreen(
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
                             text = "⏱ Tiempo estimado: $tiempoEstimado · Parada ${paradaActualIndex + 1} de ${rutaSeleccionada.paradas.size}",
-                            fontSize = 10.sp,
-                            color = blueMuted
+                            fontSize = 10.sp, color = blueMuted
                         )
                     }
                 }
