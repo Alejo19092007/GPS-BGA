@@ -2,6 +2,7 @@ package me.edwarjimenez.gpsbgaconductor.ui.map
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -25,6 +26,7 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -168,29 +170,33 @@ fun MapaScreen(
         if (!tienePermiso) launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
     }
 
-    LaunchedEffect(rutaCodigo) {
+    DisposableEffect(rutaCodigo) {
         val primera = rutaActual.polilinea.firstOrNull() ?: bucaramanga
         busLat = primera.latitude
         busLng = primera.longitude
         busMarkerState.position = primera
 
-        db.getReference("buses")
-            .addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    snapshot.children.firstOrNull { bus ->
-                        bus.child("rutaId").getValue(String::class.java) == rutaCodigo
-                    }?.let { bus ->
-                        val lat = bus.child("latitud").getValue(Double::class.java)
-                        val lng = bus.child("longitud").getValue(Double::class.java)
-                        if (lat != null && lng != null && lat != 0.0 && lng != 0.0) {
-                            busLat = lat
-                            busLng = lng
-                            busMarkerState.position = LatLng(lat, lng)
-                        }
-                    }
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+                val bus = snapshot.child(uid)
+                val rId = bus.child("rutaId").getValue(String::class.java)
+                val lat = bus.child("latitud").getValue(Double::class.java)
+                val lng = bus.child("longitud").getValue(Double::class.java)
+                Log.d("MAPA", "Bus conductor: rutaId=$rId lat=$lat lng=$lng")
+                if (rId == rutaCodigo && lat != null && lng != null && lat != 0.0 && lng != 0.0) {
+                    busLat = lat
+                    busLng = lng
+                    busMarkerState.position = LatLng(lat, lng)
                 }
-                override fun onCancelled(error: DatabaseError) {}
-            })
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        }
+
+        val ref = db.getReference("buses")
+        ref.addValueEventListener(listener)
+
+        onDispose { ref.removeEventListener(listener) }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {

@@ -1,5 +1,6 @@
 package me.edwarjimenez.gpsbgaconductor
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -10,16 +11,14 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.google.firebase.auth.FirebaseAuth
 import me.edwarjimenez.gpsbgaconductor.ui.auth.LoginScreen
 import me.edwarjimenez.gpsbgaconductor.ui.auth.RegistroScreen
 import me.edwarjimenez.gpsbgaconductor.ui.auth.RecuperarScreen
@@ -32,19 +31,19 @@ import me.edwarjimenez.gpsbgaconductor.ui.profile.MisRutasScreen
 import me.edwarjimenez.gpsbgaconductor.ui.profile.HistorialScreen
 import me.edwarjimenez.gpsbgaconductor.ui.profile.AyudaScreen
 import me.edwarjimenez.gpsbgaconductor.ui.theme.GpsBGAConductorTheme
+import androidx.compose.ui.graphics.Color
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        FirebaseAuth.getInstance().signOut()
         enableEdgeToEdge()
         setContent {
             GpsBGAConductorTheme {
+                val context = LocalContext.current
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
 
-                // Rutas donde NO mostrar la barra de navegación
                 val rutasSinNavBar = listOf("login", "registro", "recuperar")
                 val mostrarNavBar = currentRoute !in rutasSinNavBar &&
                         !currentRoute.orEmpty().startsWith("mapa") &&
@@ -57,8 +56,8 @@ class MainActivity : ComponentActivity() {
                 val bgCard = Color(0xFF0D1830)
                 val bluePrimary = Color(0xFF0078FF)
                 val blueMuted = Color(0xFF4A7FC0)
-                val blueBorder = Color(0xFF1E2D5A)
                 val cyanPrimary = Color(0xFF00C6FF)
+                val blueBorder = Color(0xFF1E2D5A)
 
                 Scaffold(
                     bottomBar = {
@@ -89,7 +88,9 @@ class MainActivity : ComponentActivity() {
                                 NavigationBarItem(
                                     selected = currentRoute?.startsWith("mapa") == true,
                                     onClick = {
-                                        navController.navigate("mapa/36") {
+                                        val prefs = context.getSharedPreferences("gpsbga_prefs", Context.MODE_PRIVATE)
+                                        val rutaActiva = prefs.getString("ruta_codigo", "36") ?: "36"
+                                        navController.navigate("mapa/$rutaActiva") {
                                             popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                                             launchSingleTop = true
                                             restoreState = true
@@ -108,7 +109,9 @@ class MainActivity : ComponentActivity() {
                                 NavigationBarItem(
                                     selected = currentRoute?.startsWith("paradas") == true,
                                     onClick = {
-                                        navController.navigate("paradas/36") {
+                                        val prefs = context.getSharedPreferences("gpsbga_prefs", Context.MODE_PRIVATE)
+                                        val rutaActiva = prefs.getString("ruta_codigo", "36") ?: "36"
+                                        navController.navigate("paradas/$rutaActiva") {
                                             popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                                             launchSingleTop = true
                                             restoreState = true
